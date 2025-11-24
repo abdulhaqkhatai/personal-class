@@ -37,3 +37,4 @@ jest/cache/
 # Misc
 .sass-cache/
 *.tgz
+server/node_modules/
