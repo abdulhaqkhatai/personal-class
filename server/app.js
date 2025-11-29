@@ -25,13 +25,14 @@ function redactUri(uri){
 }
 
 async function connectDB() {
-  if(!process.env.MONGO_URL && !process.env.MONGO_URI){
+  if (!process.env.MONGO_URL && !process.env.MONGO_URI) {
     console.warn('MONGO_URL not set — will attempt local/default or in-memory fallback')
   }
 
   const maxAttempts = 3
   let attempt = 0
-  while(attempt < maxAttempts){
+
+  while (attempt < maxAttempts) {
     attempt++
     try {
       console.log(`Attempt ${attempt}/${maxAttempts} to connect to MongoDB: ${redactUri(MONGO_URI)}`)
@@ -43,29 +44,39 @@ async function connectDB() {
       console.log('MongoDB connected')
       return true
     } catch (err) {
-      console.warn(`MongoDB connect attempt ${attempt} failed: ${err && err.message ? err.message : err}`)
-      if(attempt < maxAttempts){
+      console.warn(
+        `MongoDB connect attempt ${attempt} failed: ${err && err.message ? err.message : err}`
+      )
+
+      if (attempt < maxAttempts) {
         const waitMs = 1000 * attempt
         console.log(`Waiting ${waitMs}ms then retrying...`)
-        await new Promise(r=>setTimeout(r, waitMs))
+        await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
+
+      // After retries, try in-memory fallback
       console.log('Atlas connection failed after retries, falling back to in-memory MongoDB...')
-    try {
-      const mongod = await MongoMemoryServer.create()
-      const uri = mongod.getUri()
-      await mongoose.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      })
-      console.log('Connected to in-memory MongoDB (for local development)')
-      return true
-    } catch (err2) {
-      console.error('MongoDB connection error during in-memory startup:')
-      console.error(err2 && err2.stack ? err2.stack : err2)
-      return false
+
+      try {
+        const mongod = await MongoMemoryServer.create()
+        const uri = mongod.getUri()
+        await mongoose.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        })
+        console.log('Connected to in-memory MongoDB (for local development)')
+        return true
+      } catch (err2) {
+        console.error('MongoDB connection error during in-memory startup:')
+        console.error(err2 && err2.stack ? err2.stack : err2)
+        return false
+      }
     }
   }
+
+  // Should not be reached, but return false for safety
+  return false
 }
 
 async function seedUsersIfNeeded() {
