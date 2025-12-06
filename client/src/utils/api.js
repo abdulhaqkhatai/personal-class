@@ -1,15 +1,17 @@
 import { getToken } from './auth'
 
-// Default API base points to backend server. During development use localhost:5000
-// In production set VITE_BACKEND_URL in Vercel to your Render backend URL.
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
+// API base reads from Vercel/Netlify environment: VITE_API_URL
+// Set `VITE_API_URL` in your deployment to the backend base (e.g. https://habbu.onrender.com)
+const API_BASE = import.meta.env.VITE_API_URL
 
 export async function apiFetch(path, opts = {}){
   const headers = opts.headers || {}
   const token = getToken()
   if(token) headers['Authorization'] = `Bearer ${token}`
   if(!headers['Content-Type'] && !(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json'
-  const res = await fetch(API_BASE + path, { ...opts, headers })
+  const base = API_BASE || ''
+  const url = `${base}${path}`
+  const res = await fetch(url, { ...opts, headers })
   if(res.status === 401){
     // unauthorized - clear token
     localStorage.removeItem('ma_token')
