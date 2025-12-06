@@ -23,7 +23,7 @@ export default function Login(){
   return (
     <div className="page login-page">
       <div className="login-card card">
-        <h1 className="title">Marks Analysis</h1>
+        <h1 className="title">habbu classes</h1>
         <p className="subtitle">Teacher and Student portal — weekly & monthly stats</p>
         <form onSubmit={handleSubmit} className="login-form">
           <label className="field">Username
