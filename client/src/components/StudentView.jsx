@@ -63,8 +63,8 @@ export default function StudentView(){
   }, [tests, selectedMonth])
 
   const stats = weeklyAndMonthlyStats(filteredTests)
-  // monthlyTrend: show history across all months
-  const monthlyTrend = React.useMemo(() => weeklyAndMonthlyStats(tests).monthly || [], [tests])
+  // allTimeStats: calculate overall stats across ALL tests (all months)
+  const allTimeStats = React.useMemo(() => weeklyAndMonthlyStats(tests), [tests])
 
   const weeklyStats = stats.weekly || []
   const cumulativeWeekly = React.useMemo(() => {
@@ -250,13 +250,13 @@ export default function StudentView(){
       </section>
 
       <section className="card">
-        <h2>Average (Overall)</h2>
-        {(!stats.overall) ? <p>No data</p> : (
+        <h2>Average (Overall - All Time)</h2>
+        {(!allTimeStats.overall) ? <p>No data</p> : (
           <div className="statRow">
             {SUBJECTS.map(s=> (
-              <div key={s.key}>{s.label}: {stats.overall.perSubject?.[s.key] != null ? `${stats.overall.perSubject[s.key]}%` : '—'}</div>
+              <div key={s.key}>{s.label}: {allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
             ))}
-            <div><strong>Overall: {stats.overall.overall != null ? `${stats.overall.overall}%` : '—'}</strong></div>
+            <div><strong>Overall: {allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</strong></div>
           </div>
         )}
       </section>
