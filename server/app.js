@@ -29,7 +29,7 @@ async function connectDB() {
     console.warn('MONGO_URL not set — will attempt local/default or in-memory fallback')
   }
 
-  const maxAttempts = 3
+  const maxAttempts = 2  // Reduced from 3
   let attempt = 0
 
   while (attempt < maxAttempts) {
@@ -39,7 +39,10 @@ async function connectDB() {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000
+        serverSelectionTimeoutMS: 3000,  // Reduced from 5000
+        connectTimeoutMS: 3000,  // Added
+        socketTimeoutMS: 3000,   // Added
+        maxPoolSize: 10,         // Connection pooling
       })
       console.log('MongoDB connected')
       return true
@@ -49,7 +52,7 @@ async function connectDB() {
       )
 
       if (attempt < maxAttempts) {
-        const waitMs = 1000 * attempt
+        const waitMs = 500 * attempt  // Reduced from 1000 * attempt
         console.log(`Waiting ${waitMs}ms then retrying...`)
         await new Promise((r) => setTimeout(r, waitMs))
         continue
@@ -108,7 +111,8 @@ async function start() {
   app.use('/api/tests', testsRoutes)
   app.get('/', (req, res) => res.send({ ok: true }))
 
-  await seedUsersIfNeeded()
+  // Seed users asynchronously (don't block startup)
+  seedUsersIfNeeded().catch(err => console.error('User seeding failed:', err))
 
   return app
 }
