@@ -270,12 +270,7 @@ export default function TeacherView(){
 
           function nextMonth(){
             if(!months.length) return
-            const key = months[0]
-            // prevent navigating to future months beyond current month
-            const now = new Date()
-            const currentKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-            if(key > currentKey) return
-            setSelectedMonth(key)
+            setSelectedMonth(months[0])
           }
 
           if(!months.length) return <p>No marks yet.</p>
@@ -294,10 +289,7 @@ export default function TeacherView(){
                 <button onClick={nextMonth} aria-label="next" disabled={(() => {
                   if(!months.length) return true
                   const cur = selectedMonth || months[0]
-                  if(cur === months[0]) return true
-                  const now = new Date()
-                  const currentKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-                  return months[0] > currentKey
+                  return cur === months[0]
                 })()}>&gt;</button>
               </div>
               <table className="table">
