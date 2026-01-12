@@ -4,7 +4,7 @@ import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS } from '../utils/subjects'
 
-export default function StudentView(){
+export default function StudentView({ darkMode, setDarkMode }){
   const [tests, setTests] = useState([])
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -140,6 +140,9 @@ export default function StudentView(){
         <h1>Student Dashboard</h1>
         <div>
           <span>{getCurrentUser()?.username}</span>
+          <button onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
           <button onClick={doLogout}>Logout</button>
         </div>
       </header>
@@ -153,18 +156,16 @@ export default function StudentView(){
             function toReadable(mKey){ try{ const d = new Date(mKey + '-01'); return d.toLocaleString(undefined, { month: 'long', year: 'numeric' }) }catch(e){ return mKey } }
 
             function prev(){
-              if(!months.length) return
-              const cur = selectedMonth || months[0]
-              const idx = months.indexOf(cur)
+              if(!months.length || !selectedMonth) return
+              const idx = months.indexOf(selectedMonth)
               if(idx < months.length - 1) {
                 setSelectedMonth(months[idx + 1])
               }
             }
 
             function next(){
-              if(!months.length) return
-              const cur = selectedMonth || months[0]
-              const idx = months.indexOf(cur)
+              if(!months.length || !selectedMonth) return
+              const idx = months.indexOf(selectedMonth)
               if(idx > 0) {
                 setSelectedMonth(months[idx - 1])
               }

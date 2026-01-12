@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../utils/auth'
 
-export default function Login(){
+export default function Login({ darkMode, setDarkMode }){
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,6 +22,9 @@ export default function Login(){
 
   return (
     <div className="page login-page">
+      <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+        {darkMode ? '☀️' : '🌙'}
+      </button>
       <div className="login-card card">
         <h1 className="title">habbu classes</h1>
         <p className="subtitle">Teacher and Student portal — weekly & monthly stats</p>

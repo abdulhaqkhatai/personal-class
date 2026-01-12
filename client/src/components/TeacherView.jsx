@@ -4,7 +4,7 @@ import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS, SUBJECT_KEYS } from '../utils/subjects'
 
-export default function TeacherView(){
+export default function TeacherView({ darkMode, setDarkMode }){
   const [tests, setTests] = useState([])
   const [date, setDate] = useState(new Date().toISOString().slice(0,10))
   const [weekNum, setWeekNum] = useState('1')
@@ -190,7 +190,7 @@ export default function TeacherView(){
     })
     const months = Array.from(new Set(entries)).sort((a,b)=>b.localeCompare(a))
     if(months.length && !selectedMonth) setSelectedMonth(months[0])
-  }, [tests, selectedMonth])
+  }, [tests])
 
   return (
     <div className="page">
@@ -198,6 +198,9 @@ export default function TeacherView(){
         <h1>Teacher Dashboard</h1>
         <div>
           <span>{getCurrentUser()?.username}</span>
+          <button onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
           <button onClick={doLogout}>Logout</button>
         </div>
       </header>
@@ -261,18 +264,16 @@ export default function TeacherView(){
           }
 
           function prevMonth(){
-            if(!months.length) return
-            const cur = selectedMonth || months[0]
-            const idx = months.indexOf(cur)
+            if(!months.length || !selectedMonth) return
+            const idx = months.indexOf(selectedMonth)
             if(idx < months.length - 1) {
               setSelectedMonth(months[idx + 1])
             }
           }
 
           function nextMonth(){
-            if(!months.length) return
-            const cur = selectedMonth || months[0]
-            const idx = months.indexOf(cur)
+            if(!months.length || !selectedMonth) return
+            const idx = months.indexOf(selectedMonth)
             if(idx > 0) {
               setSelectedMonth(months[idx - 1])
             }
