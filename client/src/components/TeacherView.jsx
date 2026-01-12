@@ -262,12 +262,20 @@ export default function TeacherView(){
 
           function prevMonth(){
             if(!months.length) return
-            setSelectedMonth(months[months.length - 1])
+            const cur = selectedMonth || months[0]
+            const idx = months.indexOf(cur)
+            if(idx < months.length - 1) {
+              setSelectedMonth(months[idx + 1])
+            }
           }
 
           function nextMonth(){
             if(!months.length) return
-            setSelectedMonth(months[0])
+            const cur = selectedMonth || months[0]
+            const idx = months.indexOf(cur)
+            if(idx > 0) {
+              setSelectedMonth(months[idx - 1])
+            }
           }
 
           if(!months.length) return <p>No marks yet.</p>
