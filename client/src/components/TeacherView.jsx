@@ -42,6 +42,8 @@ export default function TeacherView({ darkMode, setDarkMode }){
       clearTimeout(timer)
     }
   },[])
+
+  async function addTest(){
     const payload = { date: new Date(date).toISOString(), marks: {} }
     // Only include the selected subject's marks
     const obj = marks[subject] || {}
