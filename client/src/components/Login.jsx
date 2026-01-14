@@ -6,17 +6,20 @@ export default function Login({ darkMode, setDarkMode }){
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const nav = useNavigate()
 
   async function handleSubmit(e){
     e.preventDefault()
     setError('')
+    setLoading(true)
     const res = await login(username.trim(), password)
     if(res.success){
       const role = res.user.role
       nav(role === 'teacher' ? '/teacher' : '/student')
     } else {
       setError('Invalid username or password')
+      setLoading(false)
     }
   }
 
@@ -30,14 +33,16 @@ export default function Login({ darkMode, setDarkMode }){
         <p className="subtitle">Teacher and Student portal — weekly & monthly stats</p>
         <form onSubmit={handleSubmit} className="login-form">
           <label className="field">Username
-            <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="e.g. student" />
+            <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="e.g. student" disabled={loading} />
           </label>
           <label className="field">Password
-            <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="your password" />
+            <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="your password" disabled={loading} />
           </label>
           {error && <div className="error">{error}</div>}
           <div className="actions">
-            <button className="btn primary" type="submit">Sign in</button>
+            <button className="btn primary" type="submit" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
           </div>
         </form>
       </div>

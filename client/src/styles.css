@@ -60,7 +60,9 @@ input,select,button{padding:8px 10px; font-size:0.95rem}
 .actions{display:flex; justify-content:flex-end; margin-top:12px}
 .btn{border:0; border-radius:8px; padding:8px 14px; cursor:pointer; transition: opacity 0.2s ease}
 .btn.primary{background:var(--accent); color:#fff}
-.btn:hover{opacity: 0.9}
+.btn:hover:not(:disabled){opacity: 0.9}
+.btn:disabled{opacity: 0.6; cursor: not-allowed}
+.input:disabled{opacity: 0.6; cursor: not-allowed}
 .error{color:#b91c1c; background:#fee2e2; padding:8px; border-radius:6px; margin-top:6px}
 
 :root[data-theme="dark"] .error{background: #7f1d1d}

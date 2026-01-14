@@ -39,10 +39,13 @@ async function connectDB() {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 3000,  // Reduced from 5000
-        connectTimeoutMS: 3000,  // Added
-        socketTimeoutMS: 3000,   // Added
-        maxPoolSize: 10,         // Connection pooling
+        serverSelectionTimeoutMS: 2000,  // Reduced from 3000
+        connectTimeoutMS: 2000,           // Reduced from 3000
+        socketTimeoutMS: 2000,            // Reduced from 3000
+        maxPoolSize: 20,                  // Increased from 10
+        minPoolSize: 5,                   // Added for better initial connection
+        maxIdleTimeMS: 30000,             // Keep connections alive
+        retryWrites: true,
       })
       console.log('MongoDB connected')
       return true
@@ -52,7 +55,7 @@ async function connectDB() {
       )
 
       if (attempt < maxAttempts) {
-        const waitMs = 500 * attempt  // Reduced from 1000 * attempt
+        const waitMs = 300 * attempt  // Reduced from 500 * attempt
         console.log(`Waiting ${waitMs}ms then retrying...`)
         await new Promise((r) => setTimeout(r, waitMs))
         continue

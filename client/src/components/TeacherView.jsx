@@ -35,7 +35,7 @@ export default function TeacherView({ darkMode, setDarkMode }){
         console.error(err)
         setLoading(false)
       })
-    }, 500) // 500ms delay
+    }, 100) // Reduced from 500ms
 
     return ()=> {
       mounted = false
