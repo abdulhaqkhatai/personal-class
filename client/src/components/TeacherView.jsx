@@ -107,10 +107,6 @@ export default function TeacherView({ darkMode, setDarkMode }){
   }, [tests.length, selectedMonth]) // Optimize dependencies
 
   const stats = weeklyAndMonthlyStats(filteredTests)
-  // monthlyTrend: compute across all tests (history), used to show month-by-month trend
-  const monthlyTrend = React.useMemo(() => {
-    return weeklyAndMonthlyStats(tests).monthly || []
-  }, [tests])
   
   // allTimeStats: compute overall stats across ALL tests (all months)
   const allTimeStats = React.useMemo(() => {
@@ -402,12 +398,12 @@ export default function TeacherView({ darkMode, setDarkMode }){
       </section>
 
       <section className="card">
-        <h2>Monthly Trend (history)</h2>
-        {(!monthlyTrend || monthlyTrend.length===0) ? <p>No monthly data</p> : (
+        <h2>Monthly Averages</h2>
+        {(!stats.monthly || stats.monthly.length===0) ? <p>No monthly stats for selected month</p> : (
           <div>
-            {monthlyTrend.map(m=> (
+            {stats.monthly.map(m=> (
               <div key={m.month} className="statRow">
-                <strong>{m.month}</strong>
+                <strong>Month {m.month}</strong>
                 {SUBJECTS.map(s=> (
                   <div key={s.key}>{s.label}: {m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
                 ))}
