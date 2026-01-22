@@ -4,32 +4,32 @@ import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS } from '../utils/subjects'
 
-export default function StudentView({ darkMode, setDarkMode }){
+export default function StudentView({ darkMode, setDarkMode }) {
   const [tests, setTests] = useState([])
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(()=>{
+  useEffect(() => {
     let mounted = true
     // Delay loading slightly to not compete with login
     const timer = setTimeout(() => {
-      apiFetch('/api/tests').then(data=>{
-        if(!mounted) return
-        if(Array.isArray(data)) setTests(data.map(t=> ({ ...t, id: t._id })))
+      apiFetch('/api/tests').then(data => {
+        if (!mounted) return
+        if (Array.isArray(data)) setTests(data.map(t => ({ ...t, id: t._id })))
         setLoading(false)
-      }).catch(err=> {
+      }).catch(err => {
         console.error(err)
         setLoading(false)
       })
     }, 100) // Reduced from 500ms
 
-    return ()=> {
+    return () => {
       mounted = false
       clearTimeout(timer)
     }
-  },[])
+  }, [])
 
-  function doLogout(){
+  function doLogout() {
     logout()
     window.location.href = '/login'
   }
@@ -45,7 +45,7 @@ export default function StudentView({ darkMode, setDarkMode }){
         const obtained = m?.obtained ?? m ?? 0
         const total = m?.total ?? (typeof m === 'number' ? 100 : 0)
         const d = new Date(date)
-        const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
         arr.push({ id, date, monthKey, subject: sub, obtained, total })
       })
     })
@@ -61,17 +61,27 @@ export default function StudentView({ darkMode, setDarkMode }){
     }, {})
   }, [entries.length]) // Only depend on entries length
 
-  const months = React.useMemo(() => Object.keys(grouped).sort((a,b)=>b.localeCompare(a)), [grouped])
+  const months = React.useMemo(() => Object.keys(grouped).sort((a, b) => b.localeCompare(a)), [grouped])
 
-  useEffect(()=>{
-    if(months.length && !selectedMonth) setSelectedMonth(months[0])
+  useEffect(() => {
+    if (months.length && !selectedMonth) setSelectedMonth(months[0])
   }, [months])
 
-  const filteredTests = React.useMemo(()=>{
-    if(!selectedMonth) return []
+  // Annual selection
+  const [selectedYear, setSelectedYear] = useState(null)
+
+  // Update annual helper when allTimeStats changes
+  useEffect(() => {
+    if (allTimeStats.annual && allTimeStats.annual.length > 0 && !selectedYear) {
+      setSelectedYear(allTimeStats.annual[0].year)
+    }
+  }, [allTimeStats, selectedYear])
+
+  const filteredTests = React.useMemo(() => {
+    if (!selectedMonth) return []
     return tests.filter(t => {
       const d = new Date(t.date)
-      const monKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+      const monKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       return monKey === selectedMonth
     })
   }, [tests, selectedMonth])
@@ -82,51 +92,51 @@ export default function StudentView({ darkMode, setDarkMode }){
 
   const weeklyStats = stats.weekly || []
   const cumulativeWeekly = React.useMemo(() => {
-    if(!weeklyStats || weeklyStats.length===0) return []
+    if (!weeklyStats || weeklyStats.length === 0) return []
     const parseWeekIndex = (wk) => {
       const m = wk.match(/-w(\d+)$/)
-      if(m) return Number(m[1])
+      if (m) return Number(m[1])
       const d = new Date(wk)
       return d.getTime()
     }
-    const sorted = [...weeklyStats].sort((a,b)=> parseWeekIndex(a.week) - parseWeekIndex(b.week))
+    const sorted = [...weeklyStats].sort((a, b) => parseWeekIndex(a.week) - parseWeekIndex(b.week))
     const cum = []
     const subjAcc = {}
     let overallSum = 0, overallCount = 0
     sorted.forEach(s => {
-      Object.entries(s.stats.perSubject || {}).forEach(([k,v]) => {
-        subjAcc[k] = subjAcc[k] || { sum:0, count:0 }
+      Object.entries(s.stats.perSubject || {}).forEach(([k, v]) => {
+        subjAcc[k] = subjAcc[k] || { sum: 0, count: 0 }
         subjAcc[k].sum += v
         subjAcc[k].count += 1
       })
-      if(typeof s.stats.overall === 'number'){
+      if (typeof s.stats.overall === 'number') {
         overallSum += s.stats.overall
         overallCount += 1
       }
       const perSubjectCum = {}
-      Object.entries(subjAcc).forEach(([k,v]) => { perSubjectCum[k] = +(v.sum / v.count).toFixed(2) })
-      const overallCum = overallCount>0 ? +(overallSum/overallCount).toFixed(2) : null
+      Object.entries(subjAcc).forEach(([k, v]) => { perSubjectCum[k] = +(v.sum / v.count).toFixed(2) })
+      const overallCum = overallCount > 0 ? +(overallSum / overallCount).toFixed(2) : null
       cum.push({ week: s.week, stats: { perSubject: perSubjectCum, overall: overallCum } })
     })
     return cum
   }, [weeklyStats])
 
-  function formatWeekLabel(wk){
+  function formatWeekLabel(wk) {
     // Always return Week N. Prefer explicit t.week when available in filteredTests.
-    try{
-      for(const t of filteredTests){
+    try {
+      for (const t of filteredTests) {
         const d = new Date(t.date)
-        if(t.week && Number.isInteger(Number(t.week))){
-          const testWeekKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-w${t.week}`
-          if(String(testWeekKey) === String(wk)) return `Week ${t.week}`
+        if (t.week && Number.isInteger(Number(t.week))) {
+          const testWeekKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-w${t.week}`
+          if (String(testWeekKey) === String(wk)) return `Week ${t.week}`
         }
       }
-    }catch(e){/* ignore */}
+    } catch (e) {/* ignore */ }
 
     const m = String(wk).match(/-w(\d+)$/)
-    if(m) return `Week ${m[1]}`
+    if (m) return `Week ${m[1]}`
     const d = new Date(wk)
-    if(!Number.isNaN(d.getTime())){
+    if (!Number.isNaN(d.getTime())) {
       const day = d.getDate()
       const weekOfMonth = Math.floor((day - 1) / 7) + 1
       return `Week ${weekOfMonth}`
@@ -148,86 +158,86 @@ export default function StudentView({ darkMode, setDarkMode }){
       </header>
 
       <section className="card">
-          <h2>Marks (by Month)</h2>
-          {loading ? <p>Loading marks...</p> : tests.length===0 && <p>No marks yet.</p>}
-          {(() => {
-            if(!months.length) return <p>No marks yet.</p>
+        <h2>Marks (by Month)</h2>
+        {loading ? <p>Loading marks...</p> : tests.length === 0 && <p>No marks yet.</p>}
+        {(() => {
+          if (!months.length) return <p>No marks yet.</p>
 
-            function toReadable(mKey){ try{ const d = new Date(mKey + '-01'); return d.toLocaleString(undefined, { month: 'long', year: 'numeric' }) }catch(e){ return mKey } }
+          function toReadable(mKey) { try { const d = new Date(mKey + '-01'); return d.toLocaleString(undefined, { month: 'long', year: 'numeric' }) } catch (e) { return mKey } }
 
-            function prev(){
-              if(!months.length || !selectedMonth) return
-              const idx = months.indexOf(selectedMonth)
-              if(idx < months.length - 1) {
-                setSelectedMonth(months[idx + 1])
-              }
+          function prev() {
+            if (!months.length || !selectedMonth) return
+            const idx = months.indexOf(selectedMonth)
+            if (idx < months.length - 1) {
+              setSelectedMonth(months[idx + 1])
             }
+          }
 
-            function next(){
-              if(!months.length || !selectedMonth) return
-              const idx = months.indexOf(selectedMonth)
-              if(idx > 0) {
-                setSelectedMonth(months[idx - 1])
-              }
+          function next() {
+            if (!months.length || !selectedMonth) return
+            const idx = months.indexOf(selectedMonth)
+            if (idx > 0) {
+              setSelectedMonth(months[idx - 1])
             }
+          }
 
-            const rows = grouped[selectedMonth] || []
+          const rows = grouped[selectedMonth] || []
 
-            return (
-              <div style={{ marginBottom:16 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
-                  <button onClick={prev} aria-label="previous" disabled={(() => {
-                    if(!months.length) return true
-                    const cur = selectedMonth || months[0]
-                    return cur === months[months.length - 1]
-                  })()}>&lt;</button>
-                  <strong style={{ minWidth:220, textAlign:'center' }}>{toReadable(selectedMonth || months[0])}</strong>
-                  <button onClick={next} aria-label="next" disabled={(() => {
-                    if(!months.length) return true
-                    const cur = selectedMonth || months[0]
-                    return cur === months[0]
-                  })()}>&gt;</button>
-                </div>
-                <table className="table">
-                  <thead>
-                    <tr><th>Date</th><th>Subject</th><th>Obtained</th><th>Total</th></tr>
-                  </thead>
-                  <tbody>
-                    {rows.map(row => (
-                      <tr key={row.id + '_' + row.subject + '_' + row.date}>
-                        <td>{new Date(row.date).toLocaleDateString()}</td>
-                        <td>{row.subject}</td>
-                        <td>{row.obtained}</td>
-                        <td>{row.total}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          return (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <button onClick={prev} aria-label="previous" disabled={(() => {
+                  if (!months.length) return true
+                  const cur = selectedMonth || months[0]
+                  return cur === months[months.length - 1]
+                })()}>&lt;</button>
+                <strong style={{ minWidth: 220, textAlign: 'center' }}>{toReadable(selectedMonth || months[0])}</strong>
+                <button onClick={next} aria-label="next" disabled={(() => {
+                  if (!months.length) return true
+                  const cur = selectedMonth || months[0]
+                  return cur === months[0]
+                })()}>&gt;</button>
               </div>
-            )
-          })()}
+              <table className="table">
+                <thead>
+                  <tr><th>Date</th><th>Subject</th><th>Obtained</th><th>Total</th></tr>
+                </thead>
+                <tbody>
+                  {rows.map(row => (
+                    <tr key={row.id + '_' + row.subject + '_' + row.date}>
+                      <td>{new Date(row.date).toLocaleDateString()}</td>
+                      <td>{row.subject}</td>
+                      <td>{row.obtained}</td>
+                      <td>{row.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
       </section>
 
       <section className="card">
         <h2>Weekly Averages (selected month)</h2>
-        {(!weeklyStats || weeklyStats.length===0) ? <p>No weekly stats for this month</p> : (
+        {(!weeklyStats || weeklyStats.length === 0) ? <p>No weekly stats for this month</p> : (
           <div>
-            {weeklyStats.map(w=> (
+            {weeklyStats.map(w => (
               <div key={w.week} className="statRow">
                 <strong>{formatWeekLabel(w.week)}</strong>
-                {SUBJECTS.map(s=> (
+                {SUBJECTS.map(s => (
                   <div key={s.key}>{s.label}: {w.stats.perSubject?.[s.key] != null ? `${w.stats.perSubject[s.key]}%` : '—'}</div>
                 ))}
                 <div>Overall: {w.stats.overall != null ? `${w.stats.overall}%` : '—'}</div>
               </div>
             ))}
 
-            <div style={{ marginTop:8 }}>
+            <div style={{ marginTop: 8 }}>
               <strong>Cumulative (through selected month)</strong>
               {cumulativeWeekly.map(cw => (
-                <div key={cw.week} style={{ marginTop:6 }}>
+                <div key={cw.week} style={{ marginTop: 6 }}>
                   <em>{formatWeekLabel(cw.week)}</em>
-                  {SUBJECTS.map(s=> (
+                  {SUBJECTS.map(s => (
                     <div key={s.key}>{s.label}: {cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</div>
                   ))}
                   <div><strong>Overall: {cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</strong></div>
@@ -240,12 +250,12 @@ export default function StudentView({ darkMode, setDarkMode }){
 
       <section className="card">
         <h2>Monthly Averages</h2>
-        {(!stats.monthly || stats.monthly.length===0) ? <p>No monthly stats</p> : (
+        {(!stats.monthly || stats.monthly.length === 0) ? <p>No monthly stats</p> : (
           <div>
-            {stats.monthly.map(m=> (
+            {stats.monthly.map(m => (
               <div key={m.month} className="statRow">
                 <strong>Month {m.month}</strong>
-                {SUBJECTS.map(s=> (
+                {SUBJECTS.map(s => (
                   <div key={s.key}>{s.label}: {m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
                 ))}
                 <div>Overall: {m.stats.overall != null ? `${m.stats.overall}%` : '—'}</div>
@@ -256,10 +266,56 @@ export default function StudentView({ darkMode, setDarkMode }){
       </section>
 
       <section className="card">
+        <h2>Annual Average</h2>
+        {(() => {
+          const annual = allTimeStats.annual || []
+          if (!annual.length) return <p>No annual stats</p>
+
+          const years = annual.map(a => a.year)
+          // find stats for selected year
+          const currentYearStats = annual.find(a => a.year === selectedYear) || annual[0]
+
+          function prevYear() {
+            if (!years.length || !selectedYear) return
+            const idx = years.indexOf(selectedYear)
+            if (idx < years.length - 1) {
+              setSelectedYear(years[idx + 1])
+            }
+          }
+
+          function nextYear() {
+            if (!years.length || !selectedYear) return
+            const idx = years.indexOf(selectedYear)
+            if (idx > 0) {
+              setSelectedYear(years[idx - 1])
+            }
+          }
+
+          if (!currentYearStats) return null
+
+          return (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <button onClick={prevYear} aria-label="previous year" disabled={years.indexOf(selectedYear) >= years.length - 1}>&lt;</button>
+                <strong style={{ minWidth: 120, textAlign: 'center' }}>Year {currentYearStats.year}</strong>
+                <button onClick={nextYear} aria-label="next year" disabled={years.indexOf(selectedYear) <= 0}>&gt;</button>
+              </div>
+              <div className="statRow">
+                {SUBJECTS.map(s => (
+                  <div key={s.key}>{s.label}: {currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                ))}
+                <div>Overall: {currentYearStats.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}</div>
+              </div>
+            </div>
+          )
+        })()}
+      </section>
+
+      <section className="card">
         <h2>Average (Overall - All Time)</h2>
         {(!allTimeStats.overall) ? <p>No data</p> : (
           <div className="statRow">
-            {SUBJECTS.map(s=> (
+            {SUBJECTS.map(s => (
               <div key={s.key}>{s.label}: {allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
             ))}
             <div><strong>Overall: {allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</strong></div>
