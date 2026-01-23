@@ -67,16 +67,6 @@ export default function StudentView({ darkMode, setDarkMode }) {
     if (months.length && !selectedMonth) setSelectedMonth(months[0])
   }, [months])
 
-  // Annual selection
-  const [selectedYear, setSelectedYear] = useState(null)
-
-  // Update annual helper when allTimeStats changes
-  useEffect(() => {
-    if (allTimeStats.annual && allTimeStats.annual.length > 0 && !selectedYear) {
-      setSelectedYear(allTimeStats.annual[0].year)
-    }
-  }, [allTimeStats, selectedYear])
-
   const filteredTests = React.useMemo(() => {
     if (!selectedMonth) return []
     return tests.filter(t => {
@@ -89,6 +79,16 @@ export default function StudentView({ darkMode, setDarkMode }) {
   const stats = weeklyAndMonthlyStats(filteredTests)
   // allTimeStats: calculate overall stats across ALL tests (all months)
   const allTimeStats = React.useMemo(() => weeklyAndMonthlyStats(tests), [tests])
+
+  // Annual selection
+  const [selectedYear, setSelectedYear] = useState(null)
+
+  // Update annual helper when allTimeStats changes
+  useEffect(() => {
+    if (allTimeStats.annual && allTimeStats.annual.length > 0 && !selectedYear) {
+      setSelectedYear(allTimeStats.annual[0].year)
+    }
+  }, [allTimeStats, selectedYear])
 
   const weeklyStats = stats.weekly || []
   const cumulativeWeekly = React.useMemo(() => {
