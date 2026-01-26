@@ -207,45 +207,55 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     <div className="page">
       <header className="header">
         <h1>Teacher Dashboard</h1>
-        <div>
-          <span>{getCurrentUser()?.username}</span>
-          <button onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
+          <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
             {darkMode ? '☀️' : '🌙'}
           </button>
-          <button onClick={doLogout}>Logout</button>
+          <button onClick={doLogout} className="btn">Logout</button>
         </div>
       </header>
+
       <section className="card">
-        <h2>Add Marks</h2>
-        <label>Date<input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-        <label>Week of month
-          <select value={weekNum} onChange={e => setWeekNum(e.target.value)}>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </label>
-        <label>Subject
-          <select value={subject} onChange={e => setSubject(e.target.value)}>
-            {SUBJECTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-        </label>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input className="input" type="number" min="0" placeholder="obtained" value={marks[subject].obtained} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], obtained: e.target.value } }))} />
-          <input className="input" type="number" min="0" placeholder="total" value={marks[subject].total} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], total: e.target.value } }))} />
+        <h2><span style={{ color: 'var(--accent)' }}>+</span> Add Marks</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <label>Date
+            <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />
+          </label>
+          <label>Week of Month
+            <select className="input" value={weekNum} onChange={e => setWeekNum(e.target.value)}>
+              <option value="1">Week 1</option>
+              <option value="2">Week 2</option>
+              <option value="3">Week 3</option>
+              <option value="4">Week 4</option>
+              <option value="5">Week 5</option>
+            </select>
+          </label>
+          <label>Subject
+            <select className="input" value={subject} onChange={e => setSubject(e.target.value)}>
+              {SUBJECTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+          </label>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <button onClick={addTest}>Add Marks</button>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px', maxWidth: '400px' }}>
+          <label>Obtained
+            <input className="input" type="number" min="0" placeholder="scored" value={marks[subject].obtained} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], obtained: e.target.value } }))} />
+          </label>
+          <label>Total
+            <input className="input" type="number" min="0" placeholder="out of" value={marks[subject].total} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], total: e.target.value } }))} />
+          </label>
+        </div>
+
+        <div style={{ marginTop: '20px' }}>
+          <button onClick={addTest} className="btn primary">Add Test Marks</button>
         </div>
       </section>
 
       <section className="card">
-        <h2>Marks (by Month)</h2>
-        {loading ? <p>Loading marks...</p> : tests.length === 0 && <p>No marks yet.</p>}
+        <h2>Marks History</h2>
+        {loading ? <p className="hint">Loading marks...</p> : tests.length === 0 && <p className="hint">No marks recorded yet.</p>}
         {(() => {
-          // transform tests into per-subject entries and group by month
           const entries = []
           tests.forEach(t => {
             const id = t.id || t._id
@@ -277,201 +287,187 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           function prevMonth() {
             if (!months.length || !selectedMonth) return
             const idx = months.indexOf(selectedMonth)
-            if (idx < months.length - 1) {
-              setSelectedMonth(months[idx + 1])
-            }
+            if (idx < months.length - 1) setSelectedMonth(months[idx + 1])
           }
 
           function nextMonth() {
             if (!months.length || !selectedMonth) return
             const idx = months.indexOf(selectedMonth)
-            if (idx > 0) {
-              setSelectedMonth(months[idx - 1])
-            }
+            if (idx > 0) setSelectedMonth(months[idx - 1])
           }
 
-          if (!months.length) return <p>No marks yet.</p>
+          if (!months.length) return null
 
           const rows = grouped[selectedMonth] || []
 
           return (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <button onClick={prevMonth} aria-label="previous" disabled={(() => {
-                  if (!months.length) return true
-                  const cur = selectedMonth || months[0]
-                  return cur === months[months.length - 1]
-                })()}>&lt;</button>
-                <strong style={{ minWidth: 220, textAlign: 'center' }}>{toReadable(selectedMonth || months[0])}</strong>
-                <button onClick={nextMonth} aria-label="next" disabled={(() => {
-                  if (!months.length) return true
-                  const cur = selectedMonth || months[0]
-                  return cur === months[0]
-                })()}>&gt;</button>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
+                <button onClick={prevMonth} className="btn" disabled={!selectedMonth || selectedMonth === months[months.length - 1]}>&larr; Prev</button>
+                <strong style={{ fontSize: '1.1rem', minWidth: '180px', textAlign: 'center' }}>{toReadable(selectedMonth || months[0])}</strong>
+                <button onClick={nextMonth} className="btn" disabled={!selectedMonth || selectedMonth === months[0]}>Next &rarr;</button>
               </div>
-              <table className="table">
-                <thead>
-                  <tr><th>Date</th><th>Subject</th><th>Obtained</th><th>Total</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {rows.map(row => {
-                    const key = `${row.id}_${row.subject}`
-                    const isEditing = !!editingRows[key]
-                    const editState = editingRows[key] || { obtained: row.obtained, total: row.total }
-                    return (
-                      <tr key={row.id + '_' + row.subject + '_' + row.date}>
-                        <td>{new Date(row.date).toLocaleDateString()}</td>
-                        <td>{row.subject}</td>
-                        <td>
-                          {isEditing ? (
-                            <input type="number" min="0" className="input" style={{ width: 90 }} value={editState.obtained} onChange={e => setEditingRows(prev => ({ ...prev, [key]: { ...prev[key], obtained: e.target.value } }))} />
-                          ) : (
-                            row.obtained
-                          )}
-                        </td>
-                        <td>
-                          {isEditing ? (
-                            <input type="number" min="0" className="input" style={{ width: 90 }} value={editState.total} onChange={e => setEditingRows(prev => ({ ...prev, [key]: { ...prev[key], total: e.target.value } }))} />
-                          ) : (
-                            row.total
-                          )}
-                        </td>
-                        <td style={{ display: 'flex', gap: 6 }}>
-                          {isEditing ? (
-                            <>
-                              <button onClick={async () => {
-                                // save edit
-                                const obtained = Number(editingRows[key].obtained) || 0
-                                const total = Number(editingRows[key].total) || 0
-                                // update local state
-                                const updated = tests.map(t => {
-                                  if (t.id !== row.id) return t
-                                  const marks = { ...t.marks }
-                                  marks[row.subject] = { obtained, total }
-                                  return { ...t, marks }
-                                })
-                                setTests(updated)
-                                try {
-                                  await apiFetch(`/api/tests/${row.id}`, { method: 'PUT', body: JSON.stringify({ marks: updated.find(x => x.id === row.id).marks, date: row.date }) })
-                                  setEditingRows(prev => { const copy = { ...prev }; delete copy[key]; return copy })
-                                } catch (err) {
-                                  console.error(err)
-                                  alert('Failed to save')
-                                }
-                              }}>Save</button>
-                              <button onClick={() => setEditingRows(prev => { const copy = { ...prev }; delete copy[key]; return copy })}>Cancel</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => setEditingRows(prev => ({ ...prev, [key]: { obtained: row.obtained, total: row.total } }))}>Edit</button>
-                              <button onClick={() => remove(row.id)}>Delete</button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr><th>Date</th><th>Subject</th><th>Score</th><th>Total</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(row => {
+                      const key = `${row.id}_${row.subject}`
+                      const isEditing = !!editingRows[key]
+                      const editState = editingRows[key] || { obtained: row.obtained, total: row.total }
+                      return (
+                        <tr key={row.id + '_' + row.subject + '_' + row.date}>
+                          <td style={{ color: 'var(--muted)' }}>{new Date(row.date).toLocaleDateString()}</td>
+                          <td style={{ fontWeight: 500 }}>{row.subject}</td>
+                          <td>
+                            {isEditing ? (
+                              <input type="number" min="0" className="input" style={{ width: 80, padding: '4px 8px' }} value={editState.obtained} onChange={e => setEditingRows(prev => ({ ...prev, [key]: { ...prev[key], obtained: e.target.value } }))} />
+                            ) : (
+                              row.obtained
+                            )}
+                          </td>
+                          <td>
+                            {isEditing ? (
+                              <input type="number" min="0" className="input" style={{ width: 80, padding: '4px 8px' }} value={editState.total} onChange={e => setEditingRows(prev => ({ ...prev, [key]: { ...prev[key], total: e.target.value } }))} />
+                            ) : (
+                              row.total
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {isEditing ? (
+                                <>
+                                  <button className="btn primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={async () => {
+                                    const obtained = Number(editingRows[key].obtained) || 0
+                                    const total = Number(editingRows[key].total) || 0
+                                    const updated = tests.map(t => {
+                                      if (t.id !== row.id) return t
+                                      const marks = { ...t.marks }
+                                      marks[row.subject] = { obtained, total }
+                                      return { ...t, marks }
+                                    })
+                                    setTests(updated)
+                                    try {
+                                      await apiFetch(`/api/tests/${row.id}`, { method: 'PUT', body: JSON.stringify({ marks: updated.find(x => x.id === row.id).marks, date: row.date }) })
+                                      setEditingRows(prev => { const copy = { ...prev }; delete copy[key]; return copy })
+                                    } catch (err) { alert('Failed to save') }
+                                  }}>Save</button>
+                                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setEditingRows(prev => { const copy = { ...prev }; delete copy[key]; return copy })}>Cancel</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setEditingRows(prev => ({ ...prev, [key]: { obtained: row.obtained, total: row.total } }))}>Edit</button>
+                                  <button className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--error)' }} onClick={() => remove(row.id)}>Delete</button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
-        })()
-        }
+        })()}
       </section>
 
-      <section className="card">
-        <h2>Weekly Averages (selected month)</h2>
-        {(!weeklyStats || weeklyStats.length === 0) ? <p>No weekly stats for this month</p> : (
-          <div>
-            {weeklyStats.map(w => (
-              <div key={w.week} className="statRow">
-                <strong>{formatWeekLabel(w.week)}</strong>
-                {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {w.stats.perSubject?.[s.key] != null ? `${w.stats.perSubject[s.key]}%` : '—'}</div>
-                ))}
-                <div>Overall: {w.stats.overall != null ? `${w.stats.overall}%` : '—'}</div>
-              </div>
-            ))}
-
-            <div style={{ marginTop: 8 }}>
-              <strong>Cumulative (through selected month)</strong>
-              {cumulativeWeekly.map(cw => (
-                <div key={cw.week} style={{ marginTop: 6 }}>
-                  <em>{formatWeekLabel(cw.week)}</em>
-                  {SUBJECTS.map(s => (
-                    <div key={s.key}>{s.label}: {cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</div>
-                  ))}
-                  <div><strong>Overall: {cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</strong></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
+        <section className="card">
+          <h2>Weekly Breakdown <span className="hint" style={{ fontWeight: 'normal', fontSize: '0.8rem' }}>({toReadable(selectedMonth)})</span></h2>
+          {(!weeklyStats || weeklyStats.length === 0) ? <p className="hint">No weekly stats available.</p> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {weeklyStats.map(w => (
+                <div key={w.week} className="statRow">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong>{formatWeekLabel(w.week)}</strong>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{w.stats.overall != null ? `${w.stats.overall}%` : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.85rem' }}>
+                    {SUBJECTS.map(s => (
+                      <span key={s.key} style={{ color: 'var(--muted)' }}>
+                        {s.label}: <span style={{ color: 'var(--text)' }}>{w.stats.perSubject?.[s.key] != null ? `${w.stats.perSubject[s.key]}%` : '—'}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
 
-      <section className="card">
-        <h2>Monthly Averages</h2>
-        {(!stats.monthly || stats.monthly.length === 0) ? <p>No monthly stats for selected month</p> : (
-          <div>
-            {stats.monthly.map(m => (
-              <div key={m.month} className="statRow">
-                <strong>Month {m.month}</strong>
-                {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
-                ))}
-                <div>Overall: {m.stats.overall != null ? `${m.stats.overall}%` : '—'}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        <section className="card">
+          <h2>Cumulative Performance</h2>
+          {(!cumulativeWeekly || cumulativeWeekly.length === 0) ? <p className="hint">No data.</p> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {cumulativeWeekly.map(cw => (
+                <div key={cw.week} className="statRow" style={{ borderLeft: '4px solid var(--accent)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong>Up to {formatWeekLabel(cw.week)}</strong>
+                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.85rem' }}>
+                    {SUBJECTS.map(s => (
+                      <span key={s.key} style={{ color: 'var(--muted)' }}>
+                        {s.label}: <span style={{ color: 'var(--text)' }}>{cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <section className="card">
         <h2
           onClick={() => navigate('/annual-average')}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          Annual Average
-          <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal' }}>View Detailed Stats &rarr;</span>
+          <span>Annual Performance <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 'normal' }}> (Selected Year: {selectedYear}) </span></span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600 }}>Detailed Analysis &rarr;</span>
         </h2>
         {(() => {
           const annual = allTimeStats.annual || []
-          if (!annual.length) return <p>No annual stats</p>
+          if (!annual.length) return <p className="hint">No annual stats available yet.</p>
 
           const years = annual.map(a => a.year)
-          // find stats for selected year
           const currentYearStats = annual.find(a => a.year === selectedYear) || annual[0]
 
           function prevYear() {
-            if (!years.length || !selectedYear) return
             const idx = years.indexOf(selectedYear)
-            if (idx < years.length - 1) {
-              setSelectedYear(years[idx + 1])
-            }
+            if (idx < years.length - 1) setSelectedYear(years[idx + 1])
           }
 
           function nextYear() {
-            if (!years.length || !selectedYear) return
             const idx = years.indexOf(selectedYear)
-            if (idx > 0) {
-              setSelectedYear(years[idx - 1])
-            }
+            if (idx > 0) setSelectedYear(years[idx - 1])
           }
 
           if (!currentYearStats) return null
 
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <button onClick={prevYear} aria-label="previous year" disabled={years.indexOf(selectedYear) >= years.length - 1}>&lt;</button>
-                <strong style={{ minWidth: 120, textAlign: 'center' }}>Year {currentYearStats.year}</strong>
-                <button onClick={nextYear} aria-label="next year" disabled={years.indexOf(selectedYear) <= 0}>&gt;</button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
+                <button onClick={prevYear} className="btn" disabled={years.indexOf(selectedYear) >= years.length - 1}>&larr;</button>
+                <strong style={{ fontSize: '1.2rem', minWidth: '100px', textAlign: 'center' }}>{currentYearStats.year}</strong>
+                <button onClick={nextYear} className="btn" disabled={years.indexOf(selectedYear) <= 0}>&rarr;</button>
               </div>
-              <div className="statRow">
+              <div className="stat-grid">
                 {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                  <div key={s.key} className="stat-card">
+                    <div className="stat-label">{s.label}</div>
+                    <div className="stat-value">{currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                  </div>
                 ))}
-                <div>Overall: {currentYearStats.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}</div>
+                <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
+                  <div className="stat-label" style={{ color: 'var(--accent)' }}>Overall Year</div>
+                  <div className="stat-value" style={{ color: 'var(--accent)' }}>{currentYearStats.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}</div>
+                </div>
               </div>
             </div>
           )
@@ -479,17 +475,22 @@ export default function TeacherView({ darkMode, setDarkMode }) {
       </section>
 
       <section className="card">
-        <h2>Average (Overall - All Time)</h2>
-        {(!allTimeStats.overall) ? <p>No data</p> : (
-          <div className="statRow">
+        <h2>All-Time Stats (Overall)</h2>
+        {(!allTimeStats.overall) ? <p className="hint">No data.</p> : (
+          <div className="stat-grid">
             {SUBJECTS.map(s => (
-              <div key={s.key}>{s.label}: {allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+              <div key={s.key} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value">{allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+              </div>
             ))}
-            <div><strong>Overall: {allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</strong></div>
+            <div className="stat-card" style={{ background: 'var(--text)', color: 'var(--bg)' }}>
+              <div className="stat-label" style={{ color: 'var(--muted)' }}>Grand Total</div>
+              <div className="stat-value" style={{ color: 'inherit' }}>{allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</div>
+            </div>
           </div>
         )}
       </section>
-
     </div>
   )
 }

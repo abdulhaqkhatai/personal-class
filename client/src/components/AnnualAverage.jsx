@@ -98,49 +98,28 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                        <div className="stat-grid">
                             {SUBJECTS.map(s => {
                                 const score = currentYearStats?.stats.perSubject?.[s.key]
                                 return (
-                                    <div key={s.key} className="statRow stat-card" style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        padding: '20px',
-                                        borderRadius: '12px',
-                                        borderStyle: 'solid',
-                                        borderWidth: '1px',
-                                        borderColor: score != null ? 'var(--accent)' : 'rgba(0,0,0,0.1)',
-                                        background: score != null ? 'var(--card)' : 'transparent',
-                                        boxShadow: score != null ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
-                                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                                        opacity: score != null ? 1 : 0.6
-                                    }}>
-                                        <span style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: 8 }}>{s.label}</span>
-                                        <strong style={{ fontSize: '1.8rem', color: score != null ? 'var(--accent)' : 'inherit' }}>
+                                    <div key={s.key} className="stat-card">
+                                        <div className="stat-label">{s.label}</div>
+                                        <div className="stat-value" style={{ opacity: score != null ? 1 : 0.3 }}>
                                             {score != null ? `${score}%` : '—'}
-                                        </strong>
+                                        </div>
                                     </div>
                                 )
                             })}
-                            <div className="statRow stat-card" style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                padding: '24px',
-                                borderRadius: '12px',
-                                borderStyle: 'solid',
-                                borderWidth: '2px',
+                            <div className="stat-card" style={{
+                                background: 'var(--accent-soft)',
                                 borderColor: 'var(--accent)',
-                                background: 'rgba(37, 99, 235, 0.03)',
                                 gridColumn: '1 / -1',
-                                marginTop: '16px',
-                                transition: 'transform 0.2s ease'
+                                marginTop: '16px'
                             }}>
-                                <span style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: 8 }}>Overall Year Average</span>
-                                <strong style={{ fontSize: '3rem', color: 'var(--accent)', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                                <div className="stat-label" style={{ color: 'var(--accent)', fontSize: '1rem' }}>Overall Year Average</div>
+                                <div className="stat-value" style={{ fontSize: '3.5rem', textShadow: '0 4px 12px var(--accent-soft)' }}>
                                     {currentYearStats?.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}
-                                </strong>
+                                </div>
                             </div>
                         </div>
                     </section>

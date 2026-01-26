@@ -150,169 +150,157 @@ export default function StudentView({ darkMode, setDarkMode }) {
     <div className="page">
       <header className="header">
         <h1>Student Dashboard</h1>
-        <div>
-          <span>{getCurrentUser()?.username}</span>
-          <button onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
+          <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
             {darkMode ? '☀️' : '🌙'}
           </button>
-          <button onClick={doLogout}>Logout</button>
+          <button onClick={doLogout} className="btn">Logout</button>
         </div>
       </header>
 
       <section className="card">
-        <h2>Marks (by Month)</h2>
-        {loading ? <p>Loading marks...</p> : tests.length === 0 && <p>No marks yet.</p>}
+        <h2>Your Marks History</h2>
+        {loading ? <p className="hint">Loading marks...</p> : tests.length === 0 && <p className="hint">No marks available yet.</p>}
         {(() => {
-          if (!months.length) return <p>No marks yet.</p>
+          if (!months.length) return null
 
           function toReadable(mKey) { try { const d = new Date(mKey + '-01'); return d.toLocaleString(undefined, { month: 'long', year: 'numeric' }) } catch (e) { return mKey } }
 
           function prev() {
-            if (!months.length || !selectedMonth) return
             const idx = months.indexOf(selectedMonth)
-            if (idx < months.length - 1) {
-              setSelectedMonth(months[idx + 1])
-            }
+            if (idx < months.length - 1) setSelectedMonth(months[idx + 1])
           }
 
           function next() {
-            if (!months.length || !selectedMonth) return
             const idx = months.indexOf(selectedMonth)
-            if (idx > 0) {
-              setSelectedMonth(months[idx - 1])
-            }
+            if (idx > 0) setSelectedMonth(months[idx - 1])
           }
 
           const rows = grouped[selectedMonth] || []
 
           return (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <button onClick={prev} aria-label="previous" disabled={(() => {
-                  if (!months.length) return true
-                  const cur = selectedMonth || months[0]
-                  return cur === months[months.length - 1]
-                })()}>&lt;</button>
-                <strong style={{ minWidth: 220, textAlign: 'center' }}>{toReadable(selectedMonth || months[0])}</strong>
-                <button onClick={next} aria-label="next" disabled={(() => {
-                  if (!months.length) return true
-                  const cur = selectedMonth || months[0]
-                  return cur === months[0]
-                })()}>&gt;</button>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
+                <button onClick={prev} className="btn" disabled={!selectedMonth || selectedMonth === months[months.length - 1]}>&larr; Prev</button>
+                <strong style={{ fontSize: '1.1rem', minWidth: '180px', textAlign: 'center' }}>{toReadable(selectedMonth || months[0])}</strong>
+                <button onClick={next} className="btn" disabled={!selectedMonth || selectedMonth === months[0]}>Next &rarr;</button>
               </div>
-              <table className="table">
-                <thead>
-                  <tr><th>Date</th><th>Subject</th><th>Obtained</th><th>Total</th></tr>
-                </thead>
-                <tbody>
-                  {rows.map(row => (
-                    <tr key={row.id + '_' + row.subject + '_' + row.date}>
-                      <td>{new Date(row.date).toLocaleDateString()}</td>
-                      <td>{row.subject}</td>
-                      <td>{row.obtained}</td>
-                      <td>{row.total}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr><th>Date</th><th>Subject</th><th>Obtained</th><th>Total</th></tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(row => (
+                      <tr key={row.id + '_' + row.subject + '_' + row.date}>
+                        <td style={{ color: 'var(--muted)' }}>{new Date(row.date).toLocaleDateString()}</td>
+                        <td style={{ fontWeight: 500 }}>{row.subject}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--accent)' }}>{row.obtained}</td>
+                        <td>{row.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         })()}
       </section>
 
-      <section className="card">
-        <h2>Weekly Averages (selected month)</h2>
-        {(!weeklyStats || weeklyStats.length === 0) ? <p>No weekly stats for this month</p> : (
-          <div>
-            {weeklyStats.map(w => (
-              <div key={w.week} className="statRow">
-                <strong>{formatWeekLabel(w.week)}</strong>
-                {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {w.stats.perSubject?.[s.key] != null ? `${w.stats.perSubject[s.key]}%` : '—'}</div>
-                ))}
-                <div>Overall: {w.stats.overall != null ? `${w.stats.overall}%` : '—'}</div>
-              </div>
-            ))}
-
-            <div style={{ marginTop: 8 }}>
-              <strong>Cumulative (through selected month)</strong>
-              {cumulativeWeekly.map(cw => (
-                <div key={cw.week} style={{ marginTop: 6 }}>
-                  <em>{formatWeekLabel(cw.week)}</em>
-                  {SUBJECTS.map(s => (
-                    <div key={s.key}>{s.label}: {cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</div>
-                  ))}
-                  <div><strong>Overall: {cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</strong></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
+        <section className="card">
+          <h2>Weekly Performance</h2>
+          {(!weeklyStats || weeklyStats.length === 0) ? <p className="hint">No weekly data available.</p> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {weeklyStats.map(w => (
+                <div key={w.week} className="statRow">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong>{formatWeekLabel(w.week)}</strong>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{w.stats.overall != null ? `${w.stats.overall}%` : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.85rem' }}>
+                    {SUBJECTS.map(s => (
+                      <span key={s.key} style={{ color: 'var(--muted)' }}>
+                        {s.label}: <span style={{ color: 'var(--text)' }}>{w.stats.perSubject?.[s.key] != null ? `${w.stats.perSubject[s.key]}%` : '—'}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
 
-      <section className="card">
-        <h2>Monthly Averages</h2>
-        {(!stats.monthly || stats.monthly.length === 0) ? <p>No monthly stats</p> : (
-          <div>
-            {stats.monthly.map(m => (
-              <div key={m.month} className="statRow">
-                <strong>Month {m.month}</strong>
-                {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
-                ))}
-                <div>Overall: {m.stats.overall != null ? `${m.stats.overall}%` : '—'}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        <section className="card">
+          <h2>Progress Tracking</h2>
+          {(!cumulativeWeekly || cumulativeWeekly.length === 0) ? <p className="hint">No data.</p> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {cumulativeWeekly.map(cw => (
+                <div key={cw.week} className="statRow" style={{ borderLeft: '4px solid var(--accent)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong>Through {formatWeekLabel(cw.week)}</strong>
+                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.85rem' }}>
+                    {SUBJECTS.map(s => (
+                      <span key={s.key} style={{ color: 'var(--muted)' }}>
+                        {s.label}: <span style={{ color: 'var(--text)' }}>{cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <section className="card">
         <h2
           onClick={() => navigate('/annual-average')}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          Annual Average
-          <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal' }}>View Detailed Stats &rarr;</span>
+          <span>Annual Review <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 'normal' }}> (Year: {selectedYear}) </span></span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600 }}>In-depth Stats &rarr;</span>
         </h2>
         {(() => {
           const annual = allTimeStats.annual || []
-          if (!annual.length) return <p>No annual stats</p>
+          if (!annual.length) return <p className="hint">No annual data yet.</p>
 
           const years = annual.map(a => a.year)
-          // find stats for selected year
           const currentYearStats = annual.find(a => a.year === selectedYear) || annual[0]
 
           function prevYear() {
-            if (!years.length || !selectedYear) return
             const idx = years.indexOf(selectedYear)
-            if (idx < years.length - 1) {
-              setSelectedYear(years[idx + 1])
-            }
+            if (idx < years.length - 1) setSelectedYear(years[idx + 1])
           }
 
           function nextYear() {
-            if (!years.length || !selectedYear) return
             const idx = years.indexOf(selectedYear)
-            if (idx > 0) {
-              setSelectedYear(years[idx - 1])
-            }
+            if (idx > 0) setSelectedYear(years[idx - 1])
           }
 
           if (!currentYearStats) return null
 
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <button onClick={prevYear} aria-label="previous year" disabled={years.indexOf(selectedYear) >= years.length - 1}>&lt;</button>
-                <strong style={{ minWidth: 120, textAlign: 'center' }}>Year {currentYearStats.year}</strong>
-                <button onClick={nextYear} aria-label="next year" disabled={years.indexOf(selectedYear) <= 0}>&gt;</button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
+                <button onClick={prevYear} className="btn" disabled={years.indexOf(selectedYear) >= years.length - 1}>&larr;</button>
+                <strong style={{ fontSize: '1.2rem', minWidth: '100px', textAlign: 'center' }}>{currentYearStats.year}</strong>
+                <button onClick={nextYear} className="btn" disabled={years.indexOf(selectedYear) <= 0}>&rarr;</button>
               </div>
-              <div className="statRow">
+              <div className="stat-grid">
                 {SUBJECTS.map(s => (
-                  <div key={s.key}>{s.label}: {currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                  <div key={s.key} className="stat-card">
+                    <div className="stat-label">{s.label}</div>
+                    <div className="stat-value">{currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                  </div>
                 ))}
-                <div>Overall: {currentYearStats.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}</div>
+                <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
+                  <div className="stat-label" style={{ color: 'var(--accent)' }}>Yearly Average</div>
+                  <div className="stat-value" style={{ color: 'var(--accent)' }}>{currentYearStats.stats.overall != null ? `${currentYearStats.stats.overall}%` : '—'}</div>
+                </div>
               </div>
             </div>
           )
@@ -320,17 +308,22 @@ export default function StudentView({ darkMode, setDarkMode }) {
       </section>
 
       <section className="card">
-        <h2>Average (Overall - All Time)</h2>
-        {(!allTimeStats.overall) ? <p>No data</p> : (
-          <div className="statRow">
+        <h2>Overall Academic Summary</h2>
+        {(!allTimeStats.overall) ? <p className="hint">No overall data recorded.</p> : (
+          <div className="stat-grid">
             {SUBJECTS.map(s => (
-              <div key={s.key}>{s.label}: {allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+              <div key={s.key} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value">{allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+              </div>
             ))}
-            <div><strong>Overall: {allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</strong></div>
+            <div className="stat-card" style={{ background: 'var(--text)', color: 'var(--bg)' }}>
+              <div className="stat-label" style={{ color: 'var(--muted)' }}>Cumulative Overall</div>
+              <div className="stat-value" style={{ color: 'inherit' }}>{allTimeStats.overall.overall != null ? `${allTimeStats.overall.overall}%` : '—'}</div>
+            </div>
           </div>
         )}
       </section>
-
     </div>
   )
 }
