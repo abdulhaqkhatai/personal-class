@@ -7,6 +7,7 @@ import { getCurrentUser } from './utils/auth'
 const Login = lazy(() => import('./components/Login'))
 const TeacherView = lazy(() => import('./components/TeacherView'))
 const StudentView = lazy(() => import('./components/StudentView'))
+const AnnualAverage = lazy(() => import('./components/AnnualAverage'))
 
 // Loading component
 function LoadingSpinner() {
@@ -24,10 +25,10 @@ function LoadingSpinner() {
   )
 }
 
-function RequireAuth({ children, role }){
+function RequireAuth({ children, role }) {
   const user = getCurrentUser()
-  if(!user) return <Navigate to="/login" replace />
-  if(role && user.role !== role) return <Navigate to="/" replace />
+  if (!user) return <Navigate to="/login" replace />
+  if (role && user.role !== role) return <Navigate to="/" replace />
   return children
 }
 
@@ -35,7 +36,7 @@ function RequireAuth({ children, role }){
 const preloadTeacherView = () => import('./components/TeacherView')
 const preloadStudentView = () => import('./components/StudentView')
 
-export default function App(){
+export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     return saved ? JSON.parse(saved) : false
@@ -43,7 +44,7 @@ export default function App(){
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
-    if(darkMode) {
+    if (darkMode) {
       document.documentElement.setAttribute('data-theme', 'dark')
     } else {
       document.documentElement.setAttribute('data-theme', 'light')
@@ -62,6 +63,11 @@ export default function App(){
         <Route path="/student" element={
           <RequireAuth role="student">
             <StudentView darkMode={darkMode} setDarkMode={setDarkMode} />
+          </RequireAuth>
+        } />
+        <Route path="/annual-average" element={
+          <RequireAuth>
+            <AnnualAverage darkMode={darkMode} setDarkMode={setDarkMode} />
           </RequireAuth>
         } />
         <Route path="/" element={<Navigate to="/login" replace />} />

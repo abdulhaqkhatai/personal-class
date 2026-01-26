@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS, SUBJECT_KEYS } from '../utils/subjects'
 
 export default function TeacherView({ darkMode, setDarkMode }) {
+  const navigate = useNavigate()
   const [tests, setTests] = useState([])
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [weekNum, setWeekNum] = useState('1')
@@ -425,7 +427,13 @@ export default function TeacherView({ darkMode, setDarkMode }) {
       </section>
 
       <section className="card">
-        <h2>Annual Average</h2>
+        <h2
+          onClick={() => navigate('/annual-average')}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          Annual Average
+          <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal' }}>View Detailed Stats &rarr;</span>
+        </h2>
         {(() => {
           const annual = allTimeStats.annual || []
           if (!annual.length) return <p>No annual stats</p>
