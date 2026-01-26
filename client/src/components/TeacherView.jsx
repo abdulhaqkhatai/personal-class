@@ -178,8 +178,8 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     return String(wk)
   }
 
-  useEffect(() => {
-    // when tests change, ensure we have a selected month (prefer latest)
+  // Compute available months from tests
+  const months = React.useMemo(() => {
     const entries = []
     tests.forEach(t => {
       const date = t.date
@@ -189,9 +189,13 @@ export default function TeacherView({ darkMode, setDarkMode }) {
         entries.push(monthKey)
       })
     })
-    const months = Array.from(new Set(entries)).sort((a, b) => b.localeCompare(a))
-    if (months.length && !selectedMonth) setSelectedMonth(months[0])
+    return Array.from(new Set(entries)).sort((a, b) => b.localeCompare(a))
   }, [tests])
+
+  useEffect(() => {
+    // when tests change, ensure we have a selected month (prefer latest)
+    if (months.length && !selectedMonth) setSelectedMonth(months[0])
+  }, [months, selectedMonth])
 
   // Annual selection
   const [selectedYear, setSelectedYear] = useState(null)
