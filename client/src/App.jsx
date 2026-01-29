@@ -8,6 +8,7 @@ const Login = lazy(() => import('./components/Login'))
 const TeacherView = lazy(() => import('./components/TeacherView'))
 const StudentView = lazy(() => import('./components/StudentView'))
 const AnnualAverage = lazy(() => import('./components/AnnualAverage'))
+const SubjectProgress = lazy(() => import('./components/SubjectProgress'))
 
 // Loading component
 function LoadingSpinner() {
@@ -68,6 +69,11 @@ export default function App() {
         <Route path="/annual-average" element={
           <RequireAuth>
             <AnnualAverage darkMode={darkMode} setDarkMode={setDarkMode} />
+          </RequireAuth>
+        } />
+        <Route path="/subject-progress" element={
+          <RequireAuth>
+            <SubjectProgress darkMode={darkMode} setDarkMode={setDarkMode} />
           </RequireAuth>
         } />
         <Route path="/" element={<Navigate to="/login" replace />} />
