@@ -75,6 +75,57 @@ export function weeklyAndMonthlyStats(tests) {
   return { weekly, monthly, annual, overall }
 }
 
+export function calculateConsistency(tests) {
+  if (!tests || tests.length === 0) return []
+
+  const subjects = {}
+  tests.forEach(t => {
+    Object.entries(t.marks || {}).forEach(([sub, m]) => {
+      const obtained = m?.obtained ?? m ?? 0
+      const total = m?.total ?? (typeof m === 'number' ? 100 : 0)
+      const pct = total > 0 ? (obtained / total) * 100 : 0
+
+      subjects[sub] = subjects[sub] || []
+      subjects[sub].push(pct)
+    })
+  })
+
+  return Object.entries(subjects).map(([subject, scores]) => {
+    if (scores.length < 2) {
+      return { subject, label: subject, variation: 0, status: 'New', color: 'var(--muted)' }
+    }
+
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length
+    const variance = scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / scores.length
+    const stdDev = Math.sqrt(variance)
+
+    let status = 'Consistent'
+    let color = '#22c55e' // green
+
+    if (stdDev <= 5) {
+      status = 'Very Stable'
+      color = '#22c55e'
+    } else if (stdDev <= 10) {
+      status = 'Consistent'
+      color = 'var(--accent)'
+    } else if (stdDev <= 15) {
+      status = 'Variable'
+      color = '#eab308' // yellow/orange
+    } else {
+      status = 'Volatile'
+      color = '#ef4444' // red
+    }
+
+    return {
+      subject,
+      variation: Math.round(stdDev * 10) / 10,
+      status,
+      color,
+      count: scores.length
+    }
+  })
+}
+
 function getWeekStart(d) {
   // return Monday of that week
   const date = new Date(d)

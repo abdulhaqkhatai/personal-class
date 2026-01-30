@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { weeklyAndMonthlyStats } from '../utils/stats'
+import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS, SUBJECT_KEYS } from '../utils/subjects'
@@ -469,21 +469,17 @@ export default function TeacherView({ darkMode, setDarkMode }) {
         </section>
 
         <section className="card">
-          <h2>Cumulative Performance</h2>
-          {(!cumulativeWeekly || cumulativeWeekly.length === 0) ? <p className="hint">No data.</p> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {cumulativeWeekly.map(cw => (
-                <div key={cw.week} className="statRow" style={{ borderLeft: '4px solid var(--accent)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <strong>Up to {formatWeekLabel(cw.week)}</strong>
-                    <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{cw.stats.overall != null ? `${cw.stats.overall}%` : '—'}</span>
+          <h2>Consistency Score</h2>
+          {tests.length === 0 ? <p className="hint">No data available.</p> : (
+            <div className="stat-grid">
+              {calculateConsistency(tests).map(stat => (
+                <div key={stat.subject} className="stat-card" style={{ borderColor: stat.color }}>
+                  <div className="stat-label">{stat.subject}</div>
+                  <div className="stat-value" style={{ color: stat.color, fontSize: '1.2rem' }}>
+                    {stat.status}
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.85rem' }}>
-                    {SUBJECTS.map(s => (
-                      <span key={s.key} style={{ color: 'var(--muted)' }}>
-                        {s.label}: <span style={{ color: 'var(--text)' }}>{cw.stats.perSubject?.[s.key] != null ? `${cw.stats.perSubject[s.key]}%` : '—'}</span>
-                      </span>
-                    ))}
+                  <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: 4 }}>
+                    Variation: ±{stat.variation}%
                   </div>
                 </div>
               ))}
