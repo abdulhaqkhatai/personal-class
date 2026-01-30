@@ -43,7 +43,7 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
                     averageScore: null,
                     highest: null,
                     lowest: null,
-                    trend: null
+                    progressRate: null
                 }
             }
 
@@ -59,16 +59,24 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
             const highest = Math.max(...scores)
             const lowest = Math.min(...scores)
 
-            // Calculate trend (comparing first half vs second half)
-            let trend = null
-            if (scores.length >= 4) {
-                const half = Math.floor(scores.length / 2)
-                const firstHalf = scores.slice(0, half).reduce((a, b) => a + b, 0) / half
-                const secondHalf = scores.slice(-half).reduce((a, b) => a + b, 0) / half
-                const diff = secondHalf - firstHalf
-                if (diff > 5) trend = 'improving'
-                else if (diff < -5) trend = 'declining'
-                else trend = 'stable'
+            // Calculate progress rate using linear regression (slope of the trend line)
+            // This gives us the rate of change in percentage points per test
+            let progressRate = null
+            if (scores.length >= 2) {
+                const n = scores.length
+                let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0
+
+                scores.forEach((score, index) => {
+                    sumX += index
+                    sumY += score
+                    sumXY += index * score
+                    sumXX += index * index
+                })
+
+                // Calculate slope (m) of the regression line: y = mx + b
+                // Slope represents the average change in score per test
+                const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+                progressRate = Math.round(slope * 100) / 100 // Round to 2 decimal places
             }
 
             return {
@@ -78,7 +86,7 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
                 averageScore: Math.round(averageScore * 10) / 10,
                 highest: Math.round(highest * 10) / 10,
                 lowest: Math.round(lowest * 10) / 10,
-                trend
+                progressRate
             }
         })
     }, [tests])
@@ -98,16 +106,17 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
         else navigate('/student')
     }
 
-    const getTrendIcon = (trend) => {
-        if (trend === 'improving') return '📈'
-        if (trend === 'declining') return '📉'
-        if (trend === 'stable') return '➡️'
-        return '—'
+    const getProgressRateIcon = (rate) => {
+        if (rate === null) return '—'
+        if (rate > 0) return '📈'
+        if (rate < 0) return '📉'
+        return '➡️'
     }
 
-    const getTrendColor = (trend) => {
-        if (trend === 'improving') return '#22c55e'
-        if (trend === 'declining') return '#ef4444'
+    const getProgressRateColor = (rate) => {
+        if (rate === null) return 'var(--muted)'
+        if (rate > 0) return '#22c55e'
+        if (rate < 0) return '#ef4444'
         return 'var(--muted)'
     }
 
@@ -197,19 +206,25 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
                                     </div>
 
                                     <div className="statRow" style={{ padding: '20px' }}>
-                                        <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: 8 }}>Performance Trend</div>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: 8 }}>Progress Rate</div>
                                         <div style={{
                                             fontSize: '2rem',
                                             fontWeight: 700,
-                                            color: getTrendColor(currentSubjectData.trend),
+                                            color: getProgressRateColor(currentSubjectData.progressRate),
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '8px'
                                         }}>
-                                            <span>{getTrendIcon(currentSubjectData.trend)}</span>
-                                            <span style={{ fontSize: '1.2rem', textTransform: 'capitalize' }}>
-                                                {currentSubjectData.trend || 'N/A'}
+                                            <span>{getProgressRateIcon(currentSubjectData.progressRate)}</span>
+                                            <span style={{ fontSize: '1.2rem' }}>
+                                                {currentSubjectData.progressRate !== null
+                                                    ? `${currentSubjectData.progressRate > 0 ? '+' : ''}${currentSubjectData.progressRate}%`
+                                                    : 'N/A'
+                                                }
                                             </span>
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: 8 }}>
+                                            per test
                                         </div>
                                     </div>
                                 </div>
@@ -237,14 +252,19 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
                                             </p>
                                         )}
 
-                                        {currentSubjectData.trend === 'improving' && (
-                                            <p style={{ margin: 0 }}>
-                                                📈 Your scores are improving over time. Keep up the momentum!
+                                        {currentSubjectData.progressRate !== null && currentSubjectData.progressRate > 2 && (
+                                            <p style={{ margin: 0, color: '#22c55e' }}>
+                                                📈 Great progress! Your scores are improving by {currentSubjectData.progressRate.toFixed(1)}% per test on average.
                                             </p>
                                         )}
-                                        {currentSubjectData.trend === 'declining' && (
+                                        {currentSubjectData.progressRate !== null && currentSubjectData.progressRate < -2 && (
+                                            <p style={{ margin: 0, color: '#ef4444' }}>
+                                                📉 Your scores are declining by {Math.abs(currentSubjectData.progressRate).toFixed(1)}% per test. Focus on reviewing recent topics.
+                                            </p>
+                                        )}
+                                        {currentSubjectData.progressRate !== null && Math.abs(currentSubjectData.progressRate) <= 2 && (
                                             <p style={{ margin: 0 }}>
-                                                📉 Recent performance has declined. Consider reviewing recent topics.
+                                                ➡️ Your performance is stable with minimal change ({currentSubjectData.progressRate > 0 ? '+' : ''}{currentSubjectData.progressRate.toFixed(1)}% per test).
                                             </p>
                                         )}
 
