@@ -301,26 +301,32 @@ export default function StudentView({ darkMode, setDarkMode }) {
         <section className="card" style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h2 style={{ margin: 0 }}>Consistency Score</h2>
-            <button
-              onClick={() => setShowConsistencyInfo(true)}
-              style={{
-                background: 'var(--accent-soft)',
-                color: 'var(--accent)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '0.9rem'
-              }}
-              title="What does this mean?"
+            <div
+              onMouseEnter={() => setShowConsistencyInfo(true)}
+              style={{ display: 'inline-block', cursor: 'pointer' }}
             >
-              ?
-            </button>
+              <button
+                onClick={() => setShowConsistencyInfo(true)}
+                style={{
+                  background: 'var(--accent-soft)',
+                  color: 'var(--accent)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  pointerEvents: 'none' // Let parent handle events to prevent flickering or double triggers
+                }}
+                title="What does this mean?"
+              >
+                ?
+              </button>
+            </div>
           </div>
 
           {tests.length === 0 ? <p className="hint">No data available.</p> : (
@@ -343,7 +349,7 @@ export default function StudentView({ darkMode, setDarkMode }) {
             <div style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.5)',
+              background: 'rgba(0,0,0,0.85)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
