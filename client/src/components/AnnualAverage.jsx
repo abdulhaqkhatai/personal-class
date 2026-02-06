@@ -4,6 +4,7 @@ import { weeklyAndMonthlyStats } from '../utils/stats'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS } from '../utils/subjects'
 import { getCurrentUser } from '../utils/auth'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function AnnualAverage({ darkMode, setDarkMode }) {
     const [tests, setTests] = useState([])
@@ -39,6 +40,56 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
     }, [annual, selectedYear])
 
     const years = useMemo(() => annual.map(a => a.year), [annual])
+
+    // Calculate monthly progression data for the selected year
+    const monthlyChartData = useMemo(() => {
+        if (!selectedYear || !tests.length) return []
+
+        // Filter tests for selected year and group by month
+        const yearTests = tests.filter(t => {
+            const d = new Date(t.date)
+            return String(d.getFullYear()) === String(selectedYear)
+        })
+
+        if (yearTests.length === 0) return []
+
+        // Group by month
+        const byMonth = {}
+        yearTests.forEach(t => {
+            const d = new Date(t.date)
+            const monthKey = d.getMonth() // 0-11
+            if (!byMonth[monthKey]) byMonth[monthKey] = []
+            byMonth[monthKey].push(t)
+        })
+
+        // Calculate averages for each month
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const chartData = []
+
+        Object.keys(byMonth).sort((a, b) => Number(a) - Number(b)).forEach(monthKey => {
+            const monthTests = byMonth[monthKey]
+            const dataPoint = { month: monthNames[monthKey] }
+
+            // Calculate average for each subject
+            SUBJECTS.forEach(subject => {
+                const subjectTests = monthTests.filter(t => t.marks && t.marks[subject.key])
+                if (subjectTests.length > 0) {
+                    const scores = subjectTests.map(t => {
+                        const m = t.marks[subject.key]
+                        const obtained = m?.obtained ?? m ?? 0
+                        const total = m?.total ?? (typeof m === 'number' ? 100 : 0)
+                        return total > 0 ? (obtained / total) * 100 : 0
+                    })
+                    const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+                    dataPoint[subject.key] = Math.round(avg * 10) / 10
+                }
+            })
+
+            chartData.push(dataPoint)
+        })
+
+        return chartData
+    }, [tests, selectedYear])
 
     function goBack() {
         if (user?.role === 'teacher') navigate('/teacher')
@@ -125,19 +176,56 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
                     </section>
 
                     <section className="card">
-                        <h2>Detailed Insights</h2>
-                        <p className="hint">Coming soon: Trends, comparative analysis, and progress tracking over the year.</p>
-                        <div style={{
-                            height: '200px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'rgba(0,0,0,0.02)',
-                            borderRadius: '8px',
-                            marginTop: 16
-                        }}>
-                            <span className="hint">Chart visualization placeholder</span>
-                        </div>
+                        <h2>Monthly Performance Progression</h2>
+                        {monthlyChartData.length === 0 ? (
+                            <p className="hint">No monthly data available for {selectedYear}. Add marks across different months to see the progression.</p>
+                        ) : (
+                            <div style={{ width: '100%', height: 400, marginTop: 20 }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                        <XAxis
+                                            dataKey="month"
+                                            stroke="var(--text)"
+                                            style={{ fontSize: '0.875rem' }}
+                                        />
+                                        <YAxis
+                                            domain={[0, 100]}
+                                            stroke="var(--text)"
+                                            style={{ fontSize: '0.875rem' }}
+                                            label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: 'var(--text)' } }}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{
+                                                background: 'var(--card-bg)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '8px',
+                                                color: 'var(--text)'
+                                            }}
+                                            formatter={(value) => `${value}%`}
+                                        />
+                                        <Legend
+                                            wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
+                                        />
+                                        {SUBJECTS.map((subject, index) => {
+                                            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                                            return (
+                                                <Line
+                                                    key={subject.key}
+                                                    type="monotone"
+                                                    dataKey={subject.key}
+                                                    name={subject.label}
+                                                    stroke={colors[index % colors.length]}
+                                                    strokeWidth={2}
+                                                    dot={{ r: 4 }}
+                                                    activeDot={{ r: 6 }}
+                                                />
+                                            )
+                                        })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </section>
                 </>
             )}
