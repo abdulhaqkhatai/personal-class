@@ -430,12 +430,12 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
                             </div>
                         </div>
 
-                        {monthlyChartData.length === 0 && currentChartIndex !== 3 ? (
+                        {(monthlyChartData.length === 0 && currentChartIndex !== 3) || (radarChartData.length === 0 && currentChartIndex === 3) ? (
                             <p className="hint">No monthly data available for {selectedYear}. Add marks across different months to see the progression.</p>
                         ) : (
                             <div style={{ width: '100%', height: 400, marginTop: 20 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    {currentChartIndex === 0 && (
+                                <ResponsiveContainer width="100%" height="100%" key={currentChartIndex}>
+                                    {currentChartIndex === 0 && monthlyChartData.length > 0 && (
                                         <LineChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                                             <XAxis
@@ -562,7 +562,7 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
                                         </AreaChart>
                                     )}
 
-                                    {currentChartIndex === 3 && (
+                                    {currentChartIndex === 3 && radarChartData.length > 0 && (
                                         <RadarChart data={radarChartData}>
                                             <PolarGrid stroke="var(--border)" />
                                             <PolarAngleAxis
