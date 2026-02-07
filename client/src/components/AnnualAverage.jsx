@@ -4,12 +4,17 @@ import { weeklyAndMonthlyStats } from '../utils/stats'
 import { apiFetch } from '../utils/api'
 import { SUBJECTS } from '../utils/subjects'
 import { getCurrentUser } from '../utils/auth'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import {
+    LineChart, Line, BarChart, Bar, AreaChart, Area,
+    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts'
 
 export default function AnnualAverage({ darkMode, setDarkMode }) {
     const [tests, setTests] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedYear, setSelectedYear] = useState(null)
+    const [currentChartIndex, setCurrentChartIndex] = useState(0)
     const navigate = useNavigate()
     const user = getCurrentUser()
 
@@ -192,6 +197,23 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
         return { topTests, topMonths }
     }, [tests, selectedYear])
 
+    // Calculate radar chart data (year average per subject)
+    const radarChartData = useMemo(() => {
+        if (!currentYearStats) return []
+
+        return SUBJECTS.map(subject => ({
+            subject: subject.label,
+            score: currentYearStats.stats.perSubject?.[subject.key] || 0
+        }))
+    }, [currentYearStats])
+
+    const chartTypes = [
+        { name: 'Line Chart', description: 'Monthly Progression' },
+        { name: 'Bar Chart', description: 'Monthly Comparison' },
+        { name: 'Area Chart', description: 'Trend Visualization' },
+        { name: 'Radar Chart', description: 'Subject Balance' }
+    ]
+
     function goBack() {
         if (user?.role === 'teacher') navigate('/teacher')
         else navigate('/student')
@@ -366,53 +388,215 @@ export default function AnnualAverage({ darkMode, setDarkMode }) {
                     </section>
 
                     <section className="card">
-                        <h2>Monthly Performance Progression</h2>
-                        {monthlyChartData.length === 0 ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <div>
+                                <h2 style={{ margin: 0 }}>{chartTypes[currentChartIndex].name}</h2>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '0.875rem', color: 'var(--muted)' }}>
+                                    {chartTypes[currentChartIndex].description}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    onClick={() => setCurrentChartIndex(prev => Math.max(0, prev - 1))}
+                                    disabled={currentChartIndex === 0}
+                                    className="btn"
+                                    style={{
+                                        opacity: currentChartIndex === 0 ? 0.5 : 1,
+                                        cursor: currentChartIndex === 0 ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    ◀
+                                </button>
+                                <span style={{
+                                    padding: '0 12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    fontSize: '0.875rem',
+                                    color: 'var(--muted)'
+                                }}>
+                                    {currentChartIndex + 1} / {chartTypes.length}
+                                </span>
+                                <button
+                                    onClick={() => setCurrentChartIndex(prev => Math.min(chartTypes.length - 1, prev + 1))}
+                                    disabled={currentChartIndex === chartTypes.length - 1}
+                                    className="btn"
+                                    style={{
+                                        opacity: currentChartIndex === chartTypes.length - 1 ? 0.5 : 1,
+                                        cursor: currentChartIndex === chartTypes.length - 1 ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    ▶
+                                </button>
+                            </div>
+                        </div>
+
+                        {monthlyChartData.length === 0 && currentChartIndex !== 3 ? (
                             <p className="hint">No monthly data available for {selectedYear}. Add marks across different months to see the progression.</p>
                         ) : (
                             <div style={{ width: '100%', height: 400, marginTop: 20 }}>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                        <XAxis
-                                            dataKey="month"
-                                            stroke="var(--text)"
-                                            style={{ fontSize: '0.875rem' }}
-                                        />
-                                        <YAxis
-                                            domain={[0, 100]}
-                                            stroke="var(--text)"
-                                            style={{ fontSize: '0.875rem' }}
-                                            label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: 'var(--text)' } }}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{
-                                                background: 'var(--card-bg)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: '8px',
-                                                color: 'var(--text)'
-                                            }}
-                                            formatter={(value) => `${value}%`}
-                                        />
-                                        <Legend
-                                            wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
-                                        />
-                                        {SUBJECTS.map((subject, index) => {
-                                            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
-                                            return (
-                                                <Line
-                                                    key={subject.key}
-                                                    type="monotone"
-                                                    dataKey={subject.key}
-                                                    name={subject.label}
-                                                    stroke={colors[index % colors.length]}
-                                                    strokeWidth={2}
-                                                    dot={{ r: 4 }}
-                                                    activeDot={{ r: 6 }}
-                                                />
-                                            )
-                                        })}
-                                    </LineChart>
+                                    {currentChartIndex === 0 && (
+                                        <LineChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                            <XAxis
+                                                dataKey="month"
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                            />
+                                            <YAxis
+                                                domain={[0, 100]}
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                                label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: 'var(--text)' } }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--card-bg)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    color: 'var(--text)'
+                                                }}
+                                                formatter={(value) => `${value}%`}
+                                            />
+                                            <Legend
+                                                wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
+                                            />
+                                            {SUBJECTS.map((subject, index) => {
+                                                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                                                return (
+                                                    <Line
+                                                        key={subject.key}
+                                                        type="monotone"
+                                                        dataKey={subject.key}
+                                                        name={subject.label}
+                                                        stroke={colors[index % colors.length]}
+                                                        strokeWidth={2}
+                                                        dot={{ r: 4 }}
+                                                        activeDot={{ r: 6 }}
+                                                    />
+                                                )
+                                            })}
+                                        </LineChart>
+                                    )}
+
+                                    {currentChartIndex === 1 && (
+                                        <BarChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                            <XAxis
+                                                dataKey="month"
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                            />
+                                            <YAxis
+                                                domain={[0, 100]}
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                                label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: 'var(--text)' } }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--card-bg)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    color: 'var(--text)'
+                                                }}
+                                                formatter={(value) => `${value}%`}
+                                            />
+                                            <Legend
+                                                wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
+                                            />
+                                            {SUBJECTS.map((subject, index) => {
+                                                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                                                return (
+                                                    <Bar
+                                                        key={subject.key}
+                                                        dataKey={subject.key}
+                                                        name={subject.label}
+                                                        fill={colors[index % colors.length]}
+                                                    />
+                                                )
+                                            })}
+                                        </BarChart>
+                                    )}
+
+                                    {currentChartIndex === 2 && (
+                                        <AreaChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                            <XAxis
+                                                dataKey="month"
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                            />
+                                            <YAxis
+                                                domain={[0, 100]}
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                                label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: 'var(--text)' } }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--card-bg)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    color: 'var(--text)'
+                                                }}
+                                                formatter={(value) => `${value}%`}
+                                            />
+                                            <Legend
+                                                wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
+                                            />
+                                            {SUBJECTS.map((subject, index) => {
+                                                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                                                return (
+                                                    <Area
+                                                        key={subject.key}
+                                                        type="monotone"
+                                                        dataKey={subject.key}
+                                                        name={subject.label}
+                                                        fill={colors[index % colors.length]}
+                                                        stroke={colors[index % colors.length]}
+                                                        fillOpacity={0.6}
+                                                    />
+                                                )
+                                            })}
+                                        </AreaChart>
+                                    )}
+
+                                    {currentChartIndex === 3 && (
+                                        <RadarChart data={radarChartData}>
+                                            <PolarGrid stroke="var(--border)" />
+                                            <PolarAngleAxis
+                                                dataKey="subject"
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.875rem' }}
+                                            />
+                                            <PolarRadiusAxis
+                                                angle={90}
+                                                domain={[0, 100]}
+                                                stroke="var(--text)"
+                                                style={{ fontSize: '0.75rem' }}
+                                            />
+                                            <Radar
+                                                name={`${selectedYear} Average`}
+                                                dataKey="score"
+                                                stroke="var(--accent)"
+                                                fill="var(--accent)"
+                                                fillOpacity={0.6}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    background: 'var(--card-bg)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    color: 'var(--text)'
+                                                }}
+                                                formatter={(value) => `${value}%`}
+                                            />
+                                            <Legend
+                                                wrapperStyle={{ fontSize: '0.875rem', color: 'var(--text)' }}
+                                            />
+                                        </RadarChart>
+                                    )}
                                 </ResponsiveContainer>
                             </div>
                         )}
