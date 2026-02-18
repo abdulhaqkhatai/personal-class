@@ -3,16 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
-import { SUBJECTS, SUBJECT_KEYS } from '../utils/subjects'
 
 export default function TeacherView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
   const [tests, setTests] = useState([])
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [weekNum, setWeekNum] = useState('1')
-  const [subject, setSubject] = useState(SUBJECT_KEYS[0])
-  const emptyMarks = SUBJECT_KEYS.reduce((acc, k) => (acc[k] = { obtained: '', total: '' }, acc), {})
-  const [marks, setMarks] = useState(emptyMarks)
+  const [subject, setSubject] = useState('')
+  const [marks, setMarks] = useState({ obtained: '', total: '' })
   const [selectedMonth, setSelectedMonth] = useState(() => {
     // initialize selected month from existing tests if any
     try {
@@ -46,19 +44,29 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     }
   }, [])
 
+  // Derive subject list dynamically from actual test data
+  const subjectKeys = React.useMemo(() => {
+    const keys = new Set()
+    tests.forEach(t => Object.keys(t.marks || {}).forEach(k => keys.add(k)))
+    return Array.from(keys).sort()
+  }, [tests])
+
+  // Set default subject once we have data
+  useEffect(() => {
+    if (subjectKeys.length > 0 && !subject) setSubject(subjectKeys[0])
+  }, [subjectKeys, subject])
+
   async function addTest() {
     const payload = { date: new Date(date).toISOString(), marks: {} }
-    // Only include the selected subject's marks
-    const obj = marks[subject] || {}
-    const obtained = Number(obj.obtained) || 0
-    const total = Number(obj.total) || 0
+    const obtained = Number(marks.obtained) || 0
+    const total = Number(marks.total) || 0
     payload.marks[subject] = { obtained, total }
     payload.week = Number(weekNum)
     try {
       const created = await apiFetch('/api/tests', { method: 'POST', body: JSON.stringify(payload) })
       const next = [{ ...created, id: created._id }, ...tests]
       setTests(next)
-      setMarks(emptyMarks)
+      setMarks({ obtained: '', total: '' })
     } catch (err) {
       console.error(err)
       alert('Failed to add test')
@@ -245,17 +253,17 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           </label>
           <label>Subject
             <select className="input" value={subject} onChange={e => setSubject(e.target.value)}>
-              {SUBJECTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              {subjectKeys.map(k => <option key={k} value={k}>{k}</option>)}
             </select>
           </label>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px', maxWidth: '400px' }}>
           <label>Obtained
-            <input className="input" type="number" min="0" placeholder="scored" value={marks[subject].obtained} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], obtained: e.target.value } }))} />
+            <input className="input" type="number" min="0" placeholder="scored" value={marks.obtained} onChange={e => setMarks(prev => ({ ...prev, obtained: e.target.value }))} />
           </label>
           <label>Total
-            <input className="input" type="number" min="0" placeholder="out of" value={marks[subject].total} onChange={e => setMarks(prev => ({ ...prev, [subject]: { ...prev[subject], total: e.target.value } }))} />
+            <input className="input" type="number" min="0" placeholder="out of" value={marks.total} onChange={e => setMarks(prev => ({ ...prev, total: e.target.value }))} />
           </label>
         </div>
 
@@ -390,10 +398,10 @@ export default function TeacherView({ darkMode, setDarkMode }) {
                   <h3 style={{ margin: 0, fontSize: '1rem' }}>Month {m.month}</h3>
                 </div>
                 <div className="stat-grid">
-                  {SUBJECTS.map(s => (
-                    <div key={s.key} className="stat-card">
-                      <div className="stat-label">{s.label}</div>
-                      <div className="stat-value">{m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
+                  {Object.entries(m.stats.perSubject || {}).map(([key, val]) => (
+                    <div key={key} className="stat-card">
+                      <div className="stat-label">{key}</div>
+                      <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
                     </div>
                   ))}
                   <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
@@ -418,7 +426,8 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           </h2>
           {tests.length === 0 ? <p className="hint">No data available yet.</p> : (() => {
             // Calculate subject progress rate using linear regression
-            const subjectStats = SUBJECTS.map(subject => {
+            const subjectStats = subjectKeys.map(key => {
+              const subject = { key, label: key }
               const subjectTests = tests.filter(t => t.marks && t.marks[subject.key])
 
               if (subjectTests.length === 0) {
@@ -645,10 +654,10 @@ export default function TeacherView({ darkMode, setDarkMode }) {
                 <button onClick={nextYear} className="btn" disabled={years.indexOf(selectedYear) <= 0}>&rarr;</button>
               </div>
               <div className="stat-grid">
-                {SUBJECTS.map(s => (
-                  <div key={s.key} className="stat-card">
-                    <div className="stat-label">{s.label}</div>
-                    <div className="stat-value">{currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                {Object.entries(currentYearStats.stats.perSubject || {}).map(([key, val]) => (
+                  <div key={key} className="stat-card">
+                    <div className="stat-label">{key}</div>
+                    <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
                   </div>
                 ))}
                 <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
@@ -665,10 +674,10 @@ export default function TeacherView({ darkMode, setDarkMode }) {
         <h2>All-Time Stats (Overall)</h2>
         {(!allTimeStats.overall) ? <p className="hint">No data.</p> : (
           <div className="stat-grid">
-            {SUBJECTS.map(s => (
-              <div key={s.key} className="stat-card">
-                <div className="stat-label">{s.label}</div>
-                <div className="stat-value">{allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+            {Object.entries(allTimeStats.overall.perSubject || {}).map(([key, val]) => (
+              <div key={key} className="stat-card">
+                <div className="stat-label">{key}</div>
+                <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
               </div>
             ))}
             <div className="stat-card" style={{ background: 'var(--text)', color: 'var(--bg)' }}>

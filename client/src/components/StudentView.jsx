@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
-import { SUBJECTS } from '../utils/subjects'
 
 export default function StudentView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
@@ -37,6 +36,13 @@ export default function StudentView({ darkMode, setDarkMode }) {
     window.location.href = '/login'
   }
 
+  // Derive subject list dynamically from actual test data
+  const subjectKeys = React.useMemo(() => {
+    const keys = new Set()
+    tests.forEach(t => Object.keys(t.marks || {}).forEach(k => keys.add(k)))
+    return Array.from(keys).sort()
+  }, [tests])
+
   // prepare month-grouped entries once - optimize with better memoization
   const entries = React.useMemo(() => {
     if (!tests.length) return []
@@ -53,7 +59,7 @@ export default function StudentView({ darkMode, setDarkMode }) {
       })
     })
     return arr
-  }, [tests.length]) // Only depend on tests length, not full tests array
+  }, [tests])
 
   const grouped = React.useMemo(() => {
     if (!entries.length) return {}
@@ -62,7 +68,7 @@ export default function StudentView({ darkMode, setDarkMode }) {
       acc[e.monthKey].push(e)
       return acc
     }, {})
-  }, [entries.length]) // Only depend on entries length
+  }, [entries])
 
   const months = React.useMemo(() => Object.keys(grouped).sort((a, b) => b.localeCompare(a)), [grouped])
 
@@ -219,10 +225,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
                   <h3 style={{ margin: 0, fontSize: '1rem' }}>Month {m.month}</h3>
                 </div>
                 <div className="stat-grid">
-                  {SUBJECTS.map(s => (
-                    <div key={s.key} className="stat-card">
-                      <div className="stat-label">{s.label}</div>
-                      <div className="stat-value">{m.stats.perSubject?.[s.key] != null ? `${m.stats.perSubject[s.key]}%` : '—'}</div>
+                  {Object.entries(m.stats.perSubject || {}).map(([key, val]) => (
+                    <div key={key} className="stat-card">
+                      <div className="stat-label">{key}</div>
+                      <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
                     </div>
                   ))}
                   <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
@@ -247,7 +253,8 @@ export default function StudentView({ darkMode, setDarkMode }) {
           </h2>
           {tests.length === 0 ? <p className="hint">No data available yet.</p> : (() => {
             // Calculate subject progress rate using linear regression
-            const subjectStats = SUBJECTS.map(subject => {
+            const subjectStats = subjectKeys.map(key => {
+              const subject = { key, label: key }
               const subjectTests = tests.filter(t => t.marks && t.marks[subject.key])
 
               if (subjectTests.length === 0) {
@@ -474,10 +481,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
                 <button onClick={nextYear} className="btn" disabled={years.indexOf(selectedYear) <= 0}>&rarr;</button>
               </div>
               <div className="stat-grid">
-                {SUBJECTS.map(s => (
-                  <div key={s.key} className="stat-card">
-                    <div className="stat-label">{s.label}</div>
-                    <div className="stat-value">{currentYearStats.stats.perSubject?.[s.key] != null ? `${currentYearStats.stats.perSubject[s.key]}%` : '—'}</div>
+                {Object.entries(currentYearStats.stats.perSubject || {}).map(([key, val]) => (
+                  <div key={key} className="stat-card">
+                    <div className="stat-label">{key}</div>
+                    <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
                   </div>
                 ))}
                 <div className="stat-card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
@@ -494,10 +501,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
         <h2>Overall Academic Summary</h2>
         {(!allTimeStats.overall) ? <p className="hint">No overall data recorded.</p> : (
           <div className="stat-grid">
-            {SUBJECTS.map(s => (
-              <div key={s.key} className="stat-card">
-                <div className="stat-label">{s.label}</div>
-                <div className="stat-value">{allTimeStats.overall.perSubject?.[s.key] != null ? `${allTimeStats.overall.perSubject[s.key]}%` : '—'}</div>
+            {Object.entries(allTimeStats.overall.perSubject || {}).map(([key, val]) => (
+              <div key={key} className="stat-card">
+                <div className="stat-label">{key}</div>
+                <div className="stat-value">{val != null ? `${val}%` : '—'}</div>
               </div>
             ))}
             <div className="stat-card" style={{ background: 'var(--text)', color: 'var(--bg)' }}>

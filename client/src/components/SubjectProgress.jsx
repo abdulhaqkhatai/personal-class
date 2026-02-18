@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats } from '../utils/stats'
 import { apiFetch } from '../utils/api'
-import { SUBJECTS } from '../utils/subjects'
 import { getCurrentUser } from '../utils/auth'
 
 export default function SubjectProgress({ darkMode, setDarkMode }) {
@@ -27,11 +26,19 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
 
     const allTimeStats = useMemo(() => weeklyAndMonthlyStats(tests), [tests])
 
+    // Derive subject list dynamically from actual test data
+    const subjectKeys = useMemo(() => {
+        const keys = new Set()
+        tests.forEach(t => Object.keys(t.marks || {}).forEach(k => keys.add(k)))
+        return Array.from(keys).sort()
+    }, [tests])
+
     // Calculate subject progress data
     const subjectProgressData = useMemo(() => {
         if (!tests.length) return []
 
-        return SUBJECTS.map(subject => {
+        return subjectKeys.map(key => {
+            const subject = { key, label: key }
             // Filter tests that have this subject
             const subjectTests = tests.filter(t => t.marks && t.marks[subject.key])
 
@@ -89,13 +96,13 @@ export default function SubjectProgress({ darkMode, setDarkMode }) {
                 progressRate
             }
         })
-    }, [tests])
+    }, [tests, subjectKeys])
 
     useEffect(() => {
-        if (SUBJECTS.length > 0 && !selectedSubject) {
-            setSelectedSubject(SUBJECTS[0].key)
+        if (subjectKeys.length > 0 && !selectedSubject) {
+            setSelectedSubject(subjectKeys[0])
         }
-    }, [selectedSubject])
+    }, [subjectKeys, selectedSubject])
 
     const currentSubjectData = useMemo(() => {
         return subjectProgressData.find(s => s.subject === selectedSubject) || null
