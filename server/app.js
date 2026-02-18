@@ -6,6 +6,7 @@ const cors = require('cors')
 
 const authRoutes = require('./routes/auth')
 const testsRoutes = require('./routes/tests')
+const classesRoutes = require('./routes/classes')
 const User = require('./models/User')
 const bcrypt = require('bcryptjs')
 
@@ -16,12 +17,12 @@ app.use(express.json())
 const MONGO_URI = process.env.MONGO_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/marksdb'
 const CLIENT_URL = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || '*'
 
-function redactUri(uri){
-  if(!uri) return 'none'
-  try{
+function redactUri(uri) {
+  if (!uri) return 'none'
+  try {
     // remove credentials from uri for safe logging
     return uri.replace(/:\/\/.+?:.+?@/, '://<REDACTED>@')
-  }catch(e){ return uri }
+  } catch (e) { return uri }
 }
 
 async function connectDB() {
@@ -112,6 +113,7 @@ async function start() {
 
   app.use('/api/auth', authRoutes)
   app.use('/api/tests', testsRoutes)
+  app.use('/api/classes', classesRoutes)
   app.get('/', (req, res) => res.send({ ok: true }))
 
   // Seed users asynchronously (don't block startup)

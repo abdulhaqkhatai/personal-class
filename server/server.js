@@ -1,7 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const mongoose = require('mongoose')
-const { MongoMemoryServer } = require('mongodb-memory-server')
+
 const cors = require('cors')
 
 const authRoutes = require('./routes/auth')
@@ -18,17 +18,26 @@ const MONGO_URI = process.env.MONGO_URL || process.env.MONGO_URI || 'mongodb://l
 
 async function connectDB() {
   try {
-    // First try Atlas connection
+    // First try Atlas/Local connection
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000 // fail fast if Atlas not reachable
+      serverSelectionTimeoutMS: 5000 // fail fast if not reachable
     })
-    console.log('MongoDB Atlas connected')
+    console.log('MongoDB connected')
     return true
   } catch (err) {
-    console.log('Atlas connection failed, falling back to in-memory MongoDB...')
+    console.log('Standard connection failed, attempting in-memory fallback...')
     try {
+      // Lazy load mongodb-memory-server
+      let MongoMemoryServer;
+      try {
+        MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
+      } catch (e) {
+        console.error('mongodb-memory-server not found. Please install dev dependencies or provide a valid MONGO_URI.');
+        throw new Error('Missing mongodb-memory-server');
+      }
+
       // Start in-memory MongoDB
       const mongod = await MongoMemoryServer.create()
       const uri = mongod.getUri()

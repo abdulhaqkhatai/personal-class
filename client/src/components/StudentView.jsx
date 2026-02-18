@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
-import { logout, getCurrentUser } from '../utils/auth'
+import { logout, getCurrentUser, getClassData } from '../utils/auth'
 import { apiFetch } from '../utils/api'
-import { SUBJECTS } from '../utils/subjects'
+import { getSubjects } from '../utils/subjects'
 
 export default function StudentView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
@@ -11,6 +11,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showConsistencyInfo, setShowConsistencyInfo] = useState(false)
+
+  // Dynamic subjects from class data
+  const SUBJECTS = getSubjects()
+  const classData = getClassData()
 
   useEffect(() => {
     let mounted = true
@@ -150,7 +154,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
   return (
     <div className="page">
       <header className="header">
-        <h1>Student Dashboard</h1>
+        <div>
+          <h1>Student Dashboard</h1>
+          {classData && <p className="hint" style={{ margin: '4px 0 0 0', fontSize: '0.9rem' }}>Class: {classData.name}</p>}
+        </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
           <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
