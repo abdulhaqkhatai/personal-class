@@ -77,7 +77,7 @@ export default function Login({ darkMode, setDarkMode }) {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>pocket class</span>
+          }}>pocket and class</span>
         </h1>
         <p className="hint" style={{ marginBottom: '32px', fontSize: '1rem' }}>Teacher &amp; Student portal</p>
 
