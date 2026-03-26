@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../utils/auth'
 
 export default function Login({ darkMode, setDarkMode }) {
@@ -8,7 +8,6 @@ export default function Login({ darkMode, setDarkMode }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('Signing in...')
-  const [showPopup, setShowPopup] = useState(false)
   const loadingTimerRef = useRef(null)
   const nav = useNavigate()
 
@@ -103,7 +102,7 @@ export default function Login({ darkMode, setDarkMode }) {
         </form>
 
         <p className="hint" style={{ marginTop: '24px', fontSize: '0.9rem' }}>
-          Don't have an account? <button type="button" onClick={() => setShowPopup(true)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit' }}>Sign Up</button>
+          Don't have an account? <Link to="/signup" style={{ color: 'var(--accent)', fontWeight: 600 }}>Sign Up</Link>
         </p>
       </div>
 
@@ -120,27 +119,6 @@ export default function Login({ darkMode, setDarkMode }) {
           to { transform: rotate(360deg); }
         }
       `}</style>
-
-      {showPopup && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="card" style={{ padding: '32px', maxWidth: '400px', textAlign: 'center', backgroundColor: 'var(--bg, #fff)' }}>
-            <h2 style={{ marginBottom: '16px' }}>Under Maintenance</h2>
-            <p style={{ marginBottom: '16px', color: 'var(--error, #e53e3e)', fontWeight: 600 }}>the website is under maintainance</p>
-            <p style={{ marginBottom: '24px', fontSize: '0.9rem', color: 'var(--text-soft, #666)' }}>
-              This website is created to help small tuition teachers or schools to maintain their student marks and academic records.
-            </p>
-            <button className="btn primary" onClick={() => setShowPopup(false)} style={{ padding: '10px 24px' }}>Close</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

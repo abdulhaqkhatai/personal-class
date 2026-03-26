@@ -5,6 +5,7 @@ import { getCurrentUser } from './utils/auth'
 // Dark mode and dark theme support
 // Lazy load components for better performance
 const Login = lazy(() => import('./components/Login'))
+const Signup = lazy(() => import('./components/Signup'))
 const TeacherView = lazy(() => import('./components/TeacherView'))
 const StudentView = lazy(() => import('./components/StudentView'))
 const AnnualAverage = lazy(() => import('./components/AnnualAverage'))
@@ -56,6 +57,7 @@ export default function App() {
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
         <Route path="/login" element={<Login darkMode={darkMode} setDarkMode={setDarkMode} />} />
+        <Route path="/signup" element={<Signup darkMode={darkMode} setDarkMode={setDarkMode} />} />
         <Route path="/teacher" element={
           <RequireAuth role="teacher">
             <TeacherView darkMode={darkMode} setDarkMode={setDarkMode} />

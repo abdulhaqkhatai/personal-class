@@ -1,0 +1,236 @@
+{
+  "exportedAt": "2026-03-25T12:36:10.513Z",
+  "description": "Pocket Class - Student marks and academic records backup",
+  "users": [
+    {
+      "_id": "692c79e5ad3fd785da6facfa",
+      "username": "admin",
+      "password": "$2a$10$t.SrVPWStcS6gMOX60jqCOVkdozMvQT56/y9uRcp/3RcEAiZxGJhi",
+      "role": "teacher",
+      "createdAt": "2025-11-30T17:07:49.855Z",
+      "updatedAt": "2025-11-30T17:07:49.855Z",
+      "__v": 0
+    },
+    {
+      "_id": "692c79e6ad3fd785da6facfc",
+      "username": "student",
+      "password": "$2a$10$P50x2k98mV2uvxhtVe/uTuhGGgJ4xcoR6zQ7gYYNUAqtOgUPgIc4e",
+      "role": "student",
+      "createdAt": "2025-11-30T17:07:50.172Z",
+      "updatedAt": "2025-11-30T17:07:50.172Z",
+      "__v": 0
+    }
+  ],
+  "tests": [
+    {
+      "_id": "693583fc9e798e874a9efa6e",
+      "date": "2025-09-15T00:00:00.000Z",
+      "marks": {
+        "Fiqh": {
+          "obtained": 38,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2025-12-07T13:41:16.621Z",
+      "updatedAt": "2025-12-07T13:41:16.621Z",
+      "__v": 0
+    },
+    {
+      "_id": "696550c457a0bd693bc33c4d",
+      "date": "2025-11-02T00:00:00.000Z",
+      "marks": {
+        "LiteratureWork": {
+          "obtained": 49,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-12T19:51:32.617Z",
+      "updatedAt": "2026-01-12T19:51:32.617Z",
+      "__v": 0
+    },
+    {
+      "_id": "6967d5a2d2f1bf7be52b9db8",
+      "date": "2025-09-21T00:00:00.000Z",
+      "marks": {
+        "Seerat": {
+          "obtained": 45,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-14T17:42:58.191Z",
+      "updatedAt": "2026-01-14T17:42:58.191Z",
+      "__v": 0
+    },
+    {
+      "_id": "69692579a609c51981e237de",
+      "date": "2025-09-28T00:00:00.000Z",
+      "marks": {
+        "Stories": {
+          "obtained": 39,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-15T17:35:53.623Z",
+      "updatedAt": "2026-01-15T17:35:53.623Z",
+      "__v": 0
+    },
+    {
+      "_id": "696e7eec99c21076e1ffbb5a",
+      "date": "2026-01-11T00:00:00.000Z",
+      "marks": {
+        "Fiqh": {
+          "obtained": 32,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-19T18:58:52.223Z",
+      "updatedAt": "2026-01-19T18:58:52.223Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fcd2711e5dc8da5faed1c",
+      "date": "2025-09-07T00:00:00.000Z",
+      "marks": {
+        "LiteratureWork": {
+          "obtained": 35,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T18:44:55.558Z",
+      "updatedAt": "2026-01-20T18:45:41.039Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fcd6311e5dc8da5faed20",
+      "date": "2025-10-05T00:00:00.000Z",
+      "marks": {
+        "LiteratureWork": {
+          "obtained": 40,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T18:45:55.971Z",
+      "updatedAt": "2026-01-20T18:45:55.971Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fce2e11e5dc8da5faed25",
+      "date": "2025-10-22T00:00:00.000Z",
+      "marks": {
+        "Seerat": {
+          "obtained": 49,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T18:49:18.570Z",
+      "updatedAt": "2026-01-20T18:49:18.570Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fcf2911e5dc8da5faed27",
+      "date": "2025-10-14T00:00:00.000Z",
+      "marks": {
+        "Fiqh": {
+          "obtained": 43,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T18:53:29.754Z",
+      "updatedAt": "2026-01-20T18:53:29.754Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fd09211e5dc8da5faed29",
+      "date": "2025-10-31T00:00:00.000Z",
+      "marks": {
+        "Stories": {
+          "obtained": 48,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T18:59:30.989Z",
+      "updatedAt": "2026-01-20T18:59:30.989Z",
+      "__v": 0
+    },
+    {
+      "_id": "696fd11e11e5dc8da5faed2b",
+      "date": "2025-11-10T00:00:00.000Z",
+      "marks": {
+        "Fiqh": {
+          "obtained": 39,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-20T19:01:50.698Z",
+      "updatedAt": "2026-01-20T19:01:50.698Z",
+      "__v": 0
+    },
+    {
+      "_id": "69790cf3fc57000200f8eebb",
+      "date": "2026-01-19T00:00:00.000Z",
+      "marks": {
+        "Seerat": {
+          "obtained": 33,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-01-27T19:07:31.956Z",
+      "updatedAt": "2026-01-27T19:07:54.078Z",
+      "__v": 0
+    },
+    {
+      "_id": "6988ce04fa1a4e90d4d735da",
+      "date": "2026-01-28T00:00:00.000Z",
+      "marks": {
+        "Stories": {
+          "obtained": 41,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-02-08T17:55:16.515Z",
+      "updatedAt": "2026-02-08T17:55:16.515Z",
+      "__v": 0
+    },
+    {
+      "_id": "6988d4adfa1a4e90d4d735e8",
+      "date": "2025-11-16T00:00:00.000Z",
+      "marks": {
+        "Seerat": {
+          "obtained": 30,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-02-08T18:23:41.867Z",
+      "updatedAt": "2026-02-08T18:23:41.867Z",
+      "__v": 0
+    },
+    {
+      "_id": "6988d771fa1a4e90d4d735ef",
+      "date": "2025-11-30T00:00:00.000Z",
+      "marks": {
+        "Stories": {
+          "obtained": 43,
+          "total": 50
+        }
+      },
+      "createdBy": "692c79e5ad3fd785da6facfa",
+      "createdAt": "2026-02-08T18:35:29.051Z",
+      "updatedAt": "2026-02-08T18:35:29.051Z",
+      "__v": 0
+    }
+  ]
+}

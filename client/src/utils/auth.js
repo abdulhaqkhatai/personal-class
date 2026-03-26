@@ -1,7 +1,6 @@
 const CURR_KEY = 'ma_current'
 const TOKEN_KEY = 'ma_token'
 
-// API login — calls backend and stores token + user
 import { apiFetch } from './api'
 
 export async function login(username, password) {
@@ -13,10 +12,28 @@ export async function login(username, password) {
       localStorage.setItem(CURR_KEY, JSON.stringify(data.user))
       return { success: true, user: data.user }
     }
-    return { success: false }
+    return { success: false, error: data?.error }
   } catch (err) {
     console.error('login error', err)
     return { success: false }
+  }
+}
+
+export async function signup({ className, username, password, subjects, students }) {
+  try {
+    const data = await apiFetch('/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ className, username, password, subjects, students })
+    })
+    if (data && data.token && data.user) {
+      localStorage.setItem(TOKEN_KEY, data.token)
+      localStorage.setItem(CURR_KEY, JSON.stringify(data.user))
+      return { success: true, user: data.user }
+    }
+    return { success: false, error: data?.error || 'Signup failed' }
+  } catch (err) {
+    console.error('signup error', err)
+    return { success: false, error: 'Network error' }
   }
 }
 

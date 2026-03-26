@@ -6,8 +6,6 @@ const cors = require('cors')
 
 const authRoutes = require('./routes/auth')
 const testsRoutes = require('./routes/tests')
-const User = require('./models/User')
-const bcrypt = require('bcryptjs')
 
 const app = express()
 app.use(cors())
@@ -19,7 +17,6 @@ const CLIENT_URL = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || '*'
 function redactUri(uri) {
   if (!uri) return 'none'
   try {
-    // remove credentials from uri for safe logging
     return uri.replace(/:\/\/.+?:.+?@/, '://<REDACTED>@')
   } catch (e) { return uri }
 }
@@ -29,7 +26,7 @@ async function connectDB() {
     console.warn('MONGO_URL not set — will attempt local/default or in-memory fallback')
   }
 
-  const maxAttempts = 2  // Reduced from 3
+  const maxAttempts = 2
   let attempt = 0
 
   while (attempt < maxAttempts) {
@@ -39,31 +36,27 @@ async function connectDB() {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 2000,  // Reduced from 3000
-        connectTimeoutMS: 2000,           // Reduced from 3000
-        socketTimeoutMS: 2000,            // Reduced from 3000
-        maxPoolSize: 20,                  // Increased from 10
-        minPoolSize: 5,                   // Added for better initial connection
-        maxIdleTimeMS: 30000,             // Keep connections alive
+        serverSelectionTimeoutMS: 2000,
+        connectTimeoutMS: 2000,
+        socketTimeoutMS: 2000,
+        maxPoolSize: 20,
+        minPoolSize: 5,
+        maxIdleTimeMS: 30000,
         retryWrites: true,
       })
       console.log('MongoDB connected')
       return true
     } catch (err) {
-      console.warn(
-        `MongoDB connect attempt ${attempt} failed: ${err && err.message ? err.message : err}`
-      )
+      console.warn(`MongoDB connect attempt ${attempt} failed: ${err && err.message ? err.message : err}`)
 
       if (attempt < maxAttempts) {
-        const waitMs = 300 * attempt  // Reduced from 500 * attempt
+        const waitMs = 300 * attempt
         console.log(`Waiting ${waitMs}ms then retrying...`)
         await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
 
-      // After retries, try in-memory fallback
       console.log('Atlas connection failed after retries, falling back to in-memory MongoDB...')
-
       try {
         const mongod = await MongoMemoryServer.create()
         const uri = mongod.getUri()
@@ -81,23 +74,7 @@ async function connectDB() {
     }
   }
 
-  // Should not be reached, but return false for safety
   return false
-}
-
-async function seedUsersIfNeeded() {
-  try {
-    const count = await User.countDocuments()
-    if (count === 0) {
-      const pass1 = await bcrypt.hash('ahkk', 10)
-      const pass2 = await bcrypt.hash('habbu', 10)
-      await User.create({ username: 'admin', password: pass1, role: 'teacher' })
-      await User.create({ username: 'student', password: pass2, role: 'student' })
-      console.log('Seeded default users: admin/student')
-    }
-  } catch (err) {
-    console.error('User seed error', err)
-  }
 }
 
 async function start() {
@@ -106,16 +83,14 @@ async function start() {
     throw new Error('Could not connect to any MongoDB instance')
   }
 
-  // Register routes after DB is ready
-  // allow CORS from CLIENT_URL (set this to your Vercel app or allow all during dev)
-  app.use(cors({ origin: CLIENT_URL }))
+  // Expose mongoose db ref to routes (for dynamic collections in tests.js)
+  app.locals.db = mongoose.connection.db
 
+  // Register routes after DB is ready
+  app.use(cors({ origin: CLIENT_URL }))
   app.use('/api/auth', authRoutes)
   app.use('/api/tests', testsRoutes)
   app.get('/', (req, res) => res.send({ ok: true }))
-
-  // Seed users asynchronously (don't block startup)
-  seedUsersIfNeeded().catch(err => console.error('User seeding failed:', err))
 
   return app
 }
