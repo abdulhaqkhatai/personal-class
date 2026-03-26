@@ -44,8 +44,14 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     }
   }, [])
 
-  // Derive subject list dynamically from actual test data
+  // Derive subject list from user's configured subjects
   const subjectKeys = React.useMemo(() => {
+    const user = getCurrentUser()
+    const configured = user?.subjects || []
+    
+    if (configured.length > 0) return configured
+    
+    // Fallback to deriving from tests if no configured subjects (for backwards compatibility)
     const keys = new Set()
     tests.forEach(t => Object.keys(t.marks || {}).forEach(k => keys.add(k)))
     return Array.from(keys).sort()

@@ -75,11 +75,11 @@ router.post('/signup', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: teacher._id, role: 'teacher', classSlug, className },
+      { id: teacher._id, role: 'teacher', classSlug, className, subjects },
       JWT_SECRET,
       { expiresIn: '30d' }
     )
-    res.json({ token, user: { id: teacher._id, username: teacher.username, role: 'teacher', classSlug, className } })
+    res.json({ token, user: { id: teacher._id, username: teacher.username, role: 'teacher', classSlug, className, subjects } })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'server error' })
@@ -102,15 +102,16 @@ router.post('/login', async (req, res) => {
     // For students: classSlug stored on their user record
     const classSlug = user.classSlug || null
     const className = user.className || null
+    const subjects = user.subjects || []
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, classSlug, className },
+      { id: user._id, role: user.role, classSlug, className, subjects },
       JWT_SECRET,
       { expiresIn: '30d' }
     )
     res.json({
       token,
-      user: { id: user._id, username: user.username, role: user.role, classSlug, className }
+      user: { id: user._id, username: user.username, role: user.role, classSlug, className, subjects }
     })
   } catch (err) {
     console.error(err)
