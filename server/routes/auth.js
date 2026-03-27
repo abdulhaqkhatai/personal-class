@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const mongoose = require('mongoose')
 const User = require('../models/User')
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me'
@@ -216,11 +217,14 @@ router.get('/students', async (req, res) => {
     
     if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can view students' })
 
+    // Convert payload.id (string) to ObjectId for proper comparison
+    const teacherId = new mongoose.Types.ObjectId(payload.id)
     const students = await User.find({ 
-      teacherId: payload.id,
+      teacherId: teacherId,
       role: 'student'
     }).select('username -_id').lean()
     
+    console.log(`Found ${students.length} students for teacher ${payload.id}`)
     res.json(students.map(s => ({ username: s.username })))
   } catch (err) {
     console.error('Get students error:', err)

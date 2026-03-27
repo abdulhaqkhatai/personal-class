@@ -28,17 +28,22 @@ export default function TeacherView({ darkMode, setDarkMode }) {
   useEffect(() => {
     // Load students list
     let mounted = true
-    apiFetch('/api/auth/students').then(data => {
-      if (!mounted) return
-      if (Array.isArray(data)) {
-        setStudents(data)
-        if (data.length > 0 && !selectedStudent) {
-          setSelectedStudent(data[0].username)
+    apiFetch('/api/auth/students')
+      .then(data => {
+        if (!mounted) return
+        console.log('Students loaded:', data)
+        if (Array.isArray(data)) {
+          setStudents(data)
+          if (data.length > 0 && !selectedStudent) {
+            setSelectedStudent(data[0].username)
+          }
+        } else {
+          console.error('Students response is not an array:', data)
         }
-      }
-    }).catch(err => {
-      console.error('Failed to load students:', err)
-    })
+      })
+      .catch(err => {
+        console.error('Failed to load students:', err)
+      })
 
     return () => { mounted = false }
   }, [])
@@ -76,6 +81,12 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     tests.forEach(t => Object.keys(t.marks || {}).forEach(k => keys.add(k)))
     return Array.from(keys).sort()
   }, [tests])
+
+  // Filter tests by selected student
+  const filteredTestsByStudent = React.useMemo(() => {
+    if (!selectedStudent) return []
+    return tests.filter(t => t.studentUsername === selectedStudent)
+  }, [tests, selectedStudent])
 
   // Set default subject once we have data
   useEffect(() => {
@@ -137,22 +148,22 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     window.location.href = '/login'
   }
 
-  // compute stats only for the selected month (if set), otherwise use all tests
+  // compute stats only for the selected month and student
   const filteredTests = React.useMemo(() => {
-    if (!tests.length || !selectedMonth) return []
-    return tests.filter(t => {
+    if (!filteredTestsByStudent.length || !selectedMonth) return []
+    return filteredTestsByStudent.filter(t => {
       const d = new Date(t.date)
       const monKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       return monKey === selectedMonth
     })
-  }, [tests.length, selectedMonth]) // Optimize dependencies
+  }, [filteredTestsByStudent.length, selectedMonth]) // Optimize dependencies
 
   const stats = weeklyAndMonthlyStats(filteredTests)
 
-  // allTimeStats: compute overall stats across ALL tests (all months)
+  // allTimeStats: compute overall stats for selected student (all months)
   const allTimeStats = React.useMemo(() => {
-    return weeklyAndMonthlyStats(tests)
-  }, [tests])
+    return weeklyAndMonthlyStats(filteredTestsByStudent)
+  }, [filteredTestsByStudent])
 
   // weeklyStats (for selected month) and cumulative per-week averages
   const weeklyStats = stats.weekly || []
@@ -217,10 +228,10 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     return String(wk)
   }
 
-  // Compute available months from tests
+  // Compute available months from selected student's tests
   const months = React.useMemo(() => {
     const entries = []
-    tests.forEach(t => {
+    filteredTestsByStudent.forEach(t => {
       const date = t.date
       Object.entries(t.marks || {}).forEach(([sub, m]) => {
         const d = new Date(date)
@@ -229,7 +240,7 @@ export default function TeacherView({ darkMode, setDarkMode }) {
       })
     })
     return Array.from(new Set(entries)).sort((a, b) => b.localeCompare(a))
-  }, [tests])
+  }, [filteredTestsByStudent])
 
   useEffect(() => {
     // when tests change, ensure we have a selected month (prefer latest)
@@ -273,8 +284,13 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           <label>Student
             <select className="input" value={selectedStudent || ''} onChange={e => setSelectedStudent(e.target.value)}>
               <option value="">Select a student...</option>
-              {students.map(s => <option key={s.username} value={s.username}>{s.username}</option>)}
+              {students.length === 0 ? (
+                <option disabled>No students available</option>
+              ) : (
+                students.map(s => <option key={s.username} value={s.username}>{s.username}</option>)
+              )}
             </select>
+            {students.length === 0 && <p className="hint" style={{ margin: '4px 0 0 0', fontSize: '0.75rem' }}>No students found. Make sure to add students during class setup.</p>}
           </label>
           <label>Date
             <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />
