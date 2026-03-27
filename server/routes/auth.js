@@ -210,61 +210,78 @@ router.post('/add-student', async (req, res) => {
 router.get('/students', async (req, res) => {
   try {
     const auth = req.headers.authorization
-    console.log('Students endpoint called, auth header:', auth ? 'Present' : 'Missing')
-    
-    if (!auth) return res.status(401).json({ error: 'No authorization token provided' })
+    if (!auth) {
+      console.log('❌ No auth header')
+      return res.status(401).json({ error: 'No token', students: [] })
+    }
     
     let payload
     try {
-      payload = jwt.verify(auth.split(' ')[1], JWT_SECRET)
-      console.log('Token verified for teacher:', payload.id, 'role:', payload.role)
+      const token = auth.split(' ')[1]
+      if (!token) throw new Error('No token')
+      payload = jwt.verify(token, JWT_SECRET)
+      console.log('✅ Token verified for teacher:', payload.id)
     } catch (err) {
-      console.error('Token verification failed:', err.message)
-      return res.status(401).json({ error: 'Invalid token' })
+      console.log('❌ Token error:', err.message)
+      return res.status(401).json({ error: err.message, students: [] })
     }
     
-    if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can view students' })
+    if (payload.role !== 'teacher') {
+      console.log('❌ Not a teacher')
+      return res.status(403).json({ error: 'Not a teacher', students: [] })
+    }
 
-    // Convert payload.id (string) to ObjectId for proper comparison
-    const teacherId = new mongoose.Types.ObjectId(payload.id)
-    console.log('Looking for students with teacherId:', teacherId.toString())
-    
-    const students = await User.find({ 
-      teacherId: teacherId,
-      role: 'student'
-    }).select('username -_id').lean()
-    
-    console.log(`Found ${students.length} students for teacher ${payload.id}`)
-    
-    // Also log all students records for debugging
-    const allStudents = await User.find({ role: 'student' }).select('username teacherId').lean()
-    console.log('Total students in DB:', allStudents.length, allStudents.map(s => ({ username: s.username, teacherId: s.teacherId?.toString() })))
-    
-    res.json(students.map(s => ({ username: s.username })))
+    try {
+      const teacherId = new mongoose.Types.ObjectId(payload.id)
+      const students = await User.find({ teacherId: teacherId, role: 'student' }).lean()
+      
+      console.log(`✅ Found ${students.length} students for teacher ${payload.id}`)
+      
+      // Always return an array, mapped to { username } format
+      const response = Array.isArray(students) ? students.map(s => ({ username: s.username })) : []
+      
+      res.status(200).json(response)
+    } catch (err) {
+      console.error('❌ Database error:', err.message)
+      res.status(500).json({ error: err.message, students: [] })
+    }
   } catch (err) {
-    console.error('Get students error:', err)
-    res.status(500).json({ error: 'Server error: ' + (err.message || 'Unknown error') })
+    console.error('❌ Students endpoint error:', err.message)
+    res.status(500).json({ error: 'Server error', students: [] })
   }
 })
 
-// DEBUG: Get current user info
-router.get('/me', async (req, res) => {
+// DEBUG: Get current user info with students
+router.get('/debug-me', async (req, res) => {
   try {
     const auth = req.headers.authorization
     if (!auth) return res.status(401).json({ error: 'No token' })
     
-    const payload = jwt.verify(auth.split(' ')[1], JWT_SECRET)
-    console.log('Me endpoint - payload:', payload)
+    const token = auth.split(' ')[1]
+    const payload = jwt.verify(token, JWT_SECRET)
     
-    const teacher = await User.findById(payload.id).lean()
-    console.log('Teacher found:', teacher ? 'Yes' : 'No', teacher?._id, teacher?.username)
+    const teacher = await User.findById(payload.id)
+    if (!teacher) return res.status(404).json({ error: 'Teacher not found' })
     
-    const students = await User.find({ teacherId: payload.id }).lean()
-    console.log('Students for this teacher:', students.length, students.map(s => s.username))
+    console.log('\n=== DEBUG INFO ===')
+    console.log('Teacher ID:', teacher._id.toString())
+    console.log('Teacher username:', teacher.username)
+    console.log('Teacher role:', teacher.role)
     
-    res.json({ teacher, studentsCount: students.length, students: students.map(s => ({ username: s.username, _id: s._id })) })
+    const students = await User.find({ teacherId: teacher._id })
+    console.log('Students found:', students.length)
+    students.forEach(s => {
+      console.log(`  - ${s.username} (id: ${s._id}, teacherId: ${s.teacherId})`)
+    })
+    console.log('=================\n')
+    
+    res.json({ 
+      teacher: { _id: teacher._id, username: teacher.username, role: teacher.role },
+      studentCount: students.length,
+      students: students.map(s => ({ username: s.username, _id: s._id.toString(), teacherId: s.teacherId.toString() }))
+    })
   } catch (err) {
-    console.error('Me endpoint error:', err)
+    console.error('Debug me error:', err)
     res.status(500).json({ error: err.message })
   }
 })

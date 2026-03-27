@@ -32,26 +32,36 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     apiFetch('/api/auth/students')
       .then(data => {
         if (!mounted) return
-        console.log('Students loaded:', data)
+        
+        console.log('Students endpoint response:', data)
+        console.log('Response type:', typeof data)
+        console.log('Is array?', Array.isArray(data))
+        console.log('Has error?', data?.error)
+        
+        // Response can be:
+        // 1. Array: [{username: "..."}, ...]
+        // 2. Error object: {error: "...", students: []}
+        
         if (data?.error) {
-          console.error('Error from students endpoint:', data.error)
+          console.error('API returned error:', data.error)
           setStudentError(data.error)
-          setStudents([])
+          setStudents(data.students || [])
         } else if (Array.isArray(data)) {
+          console.log('Received student list:', data)
           setStudents(data)
           setStudentError('')
           if (data.length > 0 && !selectedStudent) {
             setSelectedStudent(data[0].username)
           }
         } else {
-          console.error('Students response is not an array:', data)
-          setStudentError('Unexpected response format')
+          console.error('Unexpected response:', data)
+          setStudentError('Unexpected response format: ' + JSON.stringify(data).substring(0, 100))
           setStudents([])
         }
       })
       .catch(err => {
-        console.error('Failed to load students:', err)
-        setStudentError('Failed to load students: ' + err.message)
+        console.error('Failed to load students - network error:', err)
+        setStudentError('Network error: ' + err.message)
         setStudents([])
       })
 
