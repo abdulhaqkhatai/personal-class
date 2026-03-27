@@ -209,45 +209,46 @@ router.post('/add-student', async (req, res) => {
 // GET students for teacher
 router.get('/students', async (req, res) => {
   try {
+    console.log('📍 /students endpoint called')
+    
     const auth = req.headers.authorization
     if (!auth) {
       console.log('❌ No auth header')
-      return res.status(401).json({ error: 'No token', students: [] })
+      return res.json([])
+    }
+    
+    const token = auth.split(' ')[1]
+    if (!token) {
+      console.log('❌ No token in auth header')
+      return res.json([])
     }
     
     let payload
     try {
-      const token = auth.split(' ')[1]
-      if (!token) throw new Error('No token')
       payload = jwt.verify(token, JWT_SECRET)
-      console.log('✅ Token verified for teacher:', payload.id)
+      console.log('✅ Token verified for:', payload.id)
     } catch (err) {
-      console.log('❌ Token error:', err.message)
-      return res.status(401).json({ error: err.message, students: [] })
+      console.log('❌ Invalid token:', err.message)
+      return res.json([])
     }
     
     if (payload.role !== 'teacher') {
-      console.log('❌ Not a teacher')
-      return res.status(403).json({ error: 'Not a teacher', students: [] })
+      console.log('❌ Not a teacher, role:', payload.role)
+      return res.json([])
     }
 
-    try {
-      const teacherId = new mongoose.Types.ObjectId(payload.id)
-      const students = await User.find({ teacherId: teacherId, role: 'student' }).lean()
-      
-      console.log(`✅ Found ${students.length} students for teacher ${payload.id}`)
-      
-      // Always return an array, mapped to { username } format
-      const response = Array.isArray(students) ? students.map(s => ({ username: s.username })) : []
-      
-      res.status(200).json(response)
-    } catch (err) {
-      console.error('❌ Database error:', err.message)
-      res.status(500).json({ error: err.message, students: [] })
-    }
+    const teacherId = new mongoose.Types.ObjectId(payload.id)
+    const students = await User.find({ teacherId, role: 'student' }).lean()
+    
+    console.log(`✅ Found ${students.length} students`)
+    
+    const result = students.map(s => ({ username: s.username }))
+    console.log('Returning:', result)
+    
+    return res.json(result)
   } catch (err) {
-    console.error('❌ Students endpoint error:', err.message)
-    res.status(500).json({ error: 'Server error', students: [] })
+    console.error('❌ ERROR in /students:', err)
+    return res.json([])
   }
 })
 
