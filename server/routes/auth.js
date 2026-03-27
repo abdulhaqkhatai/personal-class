@@ -201,4 +201,31 @@ router.post('/add-student', async (req, res) => {
   }
 })
 
+// GET students for teacher
+router.get('/students', async (req, res) => {
+  try {
+    const auth = req.headers.authorization
+    if (!auth) return res.status(401).json({ error: 'No authorization token provided' })
+    
+    let payload
+    try {
+      payload = jwt.verify(auth.split(' ')[1], JWT_SECRET)
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+    
+    if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can view students' })
+
+    const students = await User.find({ 
+      teacherId: payload.id,
+      role: 'student'
+    }).select('username -_id').lean()
+    
+    res.json(students.map(s => ({ username: s.username })))
+  } catch (err) {
+    console.error('Get students error:', err)
+    res.status(500).json({ error: 'Server error: ' + (err.message || 'Unknown error') })
+  }
+})
+
 module.exports = router

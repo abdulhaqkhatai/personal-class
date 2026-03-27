@@ -29,7 +29,14 @@ function getTestsCollection(req) {
 router.get('/', verifyToken, async (req, res) => {
   try {
     const col = getTestsCollection(req)
-    const tests = await col.find({}).sort({ date: -1 }).toArray()
+    const filterQuery = {}
+    
+    // If student is querying, only show their marks
+    if (req.user.role === 'student') {
+      filterQuery.studentUsername = req.user.username
+    }
+    
+    const tests = await col.find(filterQuery).sort({ date: -1 }).toArray()
     res.json(tests)
   } catch (err) {
     console.error(err)
@@ -41,13 +48,15 @@ router.get('/', verifyToken, async (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
   try {
     if (req.user.role !== 'teacher') return res.status(403).json({ error: 'forbidden' })
-    const { date, marks, week } = req.body
+    const { date, marks, week, studentUsername } = req.body
     if (!date || !marks) return res.status(400).json({ error: 'date and marks required' })
+    
     const col = getTestsCollection(req)
     const doc = {
       date: new Date(date),
       marks,
       week: week || null,
+      studentUsername: studentUsername || null,
       createdBy: req.user.id,
       classSlug: req.user.classSlug,
       createdAt: new Date(),

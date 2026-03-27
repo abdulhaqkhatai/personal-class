@@ -7,6 +7,8 @@ import { apiFetch } from '../utils/api'
 export default function TeacherView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
   const [tests, setTests] = useState([])
+  const [students, setStudents] = useState([])
+  const [selectedStudent, setSelectedStudent] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [weekNum, setWeekNum] = useState('1')
   const [subject, setSubject] = useState('')
@@ -22,6 +24,24 @@ export default function TeacherView({ darkMode, setDarkMode }) {
   const [editingRows, setEditingRows] = useState({})
   const [loading, setLoading] = useState(true)
   const [showConsistencyInfo, setShowConsistencyInfo] = useState(false)
+
+  useEffect(() => {
+    // Load students list
+    let mounted = true
+    apiFetch('/api/auth/students').then(data => {
+      if (!mounted) return
+      if (Array.isArray(data)) {
+        setStudents(data)
+        if (data.length > 0 && !selectedStudent) {
+          setSelectedStudent(data[0].username)
+        }
+      }
+    }).catch(err => {
+      console.error('Failed to load students:', err)
+    })
+
+    return () => { mounted = false }
+  }, [])
 
   useEffect(() => {
     // load from API
@@ -63,7 +83,11 @@ export default function TeacherView({ darkMode, setDarkMode }) {
   }, [subjectKeys, subject])
 
   async function addTest() {
-    const payload = { date: new Date(date).toISOString(), marks: {} }
+    if (!selectedStudent) {
+      alert('Please select a student first')
+      return
+    }
+    const payload = { date: new Date(date).toISOString(), marks: {}, studentUsername: selectedStudent }
     const obtained = Number(marks.obtained) || 0
     const total = Number(marks.total) || 0
     payload.marks[subject] = { obtained, total }
@@ -244,7 +268,14 @@ export default function TeacherView({ darkMode, setDarkMode }) {
 
       <section className="card">
         <h2><span style={{ color: 'var(--accent)' }}>+</span> Add Marks</h2>
+        
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <label>Student
+            <select className="input" value={selectedStudent || ''} onChange={e => setSelectedStudent(e.target.value)}>
+              <option value="">Select a student...</option>
+              {students.map(s => <option key={s.username} value={s.username}>{s.username}</option>)}
+            </select>
+          </label>
           <label>Date
             <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />
           </label>
@@ -279,11 +310,14 @@ export default function TeacherView({ darkMode, setDarkMode }) {
       </section>
 
       <section className="card">
-        <h2>Marks History</h2>
+        <h2>Marks History {selectedStudent && <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>- {selectedStudent}</span>}</h2>
         {loading ? <p className="hint">Loading marks...</p> : tests.length === 0 && <p className="hint">No marks recorded yet.</p>}
         {(() => {
           const entries = []
           tests.forEach(t => {
+            // Filter by selected student
+            if (selectedStudent && t.studentUsername !== selectedStudent) return
+            
             const id = t.id || t._id
             const date = t.date
             Object.entries(t.marks || {}).forEach(([sub, m]) => {
