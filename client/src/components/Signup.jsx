@@ -68,7 +68,7 @@ export default function Signup({ darkMode, setDarkMode }) {
     if (students.length === 0) { setError('Please add at least one student'); return }
     setLoading(true)
     setError('')
-    const res = await signup({ className: className.trim(), username: username.trim(), password, subjects, students })
+    const res = await signup({ className: className.trim(), username: username.trim(), password: password.trim(), subjects, students })
     setLoading(false)
     if (res.success) {
       nav('/teacher')
