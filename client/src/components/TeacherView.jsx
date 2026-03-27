@@ -24,6 +24,7 @@ export default function TeacherView({ darkMode, setDarkMode }) {
   const [editingRows, setEditingRows] = useState({})
   const [loading, setLoading] = useState(true)
   const [showConsistencyInfo, setShowConsistencyInfo] = useState(false)
+  const [studentError, setStudentError] = useState('')
 
   useEffect(() => {
     // Load students list
@@ -32,17 +33,26 @@ export default function TeacherView({ darkMode, setDarkMode }) {
       .then(data => {
         if (!mounted) return
         console.log('Students loaded:', data)
-        if (Array.isArray(data)) {
+        if (data?.error) {
+          console.error('Error from students endpoint:', data.error)
+          setStudentError(data.error)
+          setStudents([])
+        } else if (Array.isArray(data)) {
           setStudents(data)
+          setStudentError('')
           if (data.length > 0 && !selectedStudent) {
             setSelectedStudent(data[0].username)
           }
         } else {
           console.error('Students response is not an array:', data)
+          setStudentError('Unexpected response format')
+          setStudents([])
         }
       })
       .catch(err => {
         console.error('Failed to load students:', err)
+        setStudentError('Failed to load students: ' + err.message)
+        setStudents([])
       })
 
     return () => { mounted = false }
@@ -290,7 +300,8 @@ export default function TeacherView({ darkMode, setDarkMode }) {
                 students.map(s => <option key={s.username} value={s.username}>{s.username}</option>)
               )}
             </select>
-            {students.length === 0 && <p className="hint" style={{ margin: '4px 0 0 0', fontSize: '0.75rem' }}>No students found. Make sure to add students during class setup.</p>}
+            {studentError && <p className="error" style={{ margin: '4px 0 0 0', fontSize: '0.75rem' }}>Error: {studentError}</p>}
+            {!studentError && students.length === 0 && <p className="hint" style={{ margin: '4px 0 0 0', fontSize: '0.75rem' }}>No students found. Make sure to add students during class setup.</p>}
           </label>
           <label>Date
             <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />

@@ -206,12 +206,16 @@ router.post('/add-student', async (req, res) => {
 router.get('/students', async (req, res) => {
   try {
     const auth = req.headers.authorization
+    console.log('Students endpoint called, auth header:', auth ? 'Present' : 'Missing')
+    
     if (!auth) return res.status(401).json({ error: 'No authorization token provided' })
     
     let payload
     try {
       payload = jwt.verify(auth.split(' ')[1], JWT_SECRET)
+      console.log('Token verified for teacher:', payload.id, 'role:', payload.role)
     } catch (err) {
+      console.error('Token verification failed:', err.message)
       return res.status(401).json({ error: 'Invalid token' })
     }
     
@@ -219,12 +223,19 @@ router.get('/students', async (req, res) => {
 
     // Convert payload.id (string) to ObjectId for proper comparison
     const teacherId = new mongoose.Types.ObjectId(payload.id)
+    console.log('Looking for students with teacherId:', teacherId.toString())
+    
     const students = await User.find({ 
       teacherId: teacherId,
       role: 'student'
     }).select('username -_id').lean()
     
     console.log(`Found ${students.length} students for teacher ${payload.id}`)
+    
+    // Also log all students records for debugging
+    const allStudents = await User.find({ role: 'student' }).select('username teacherId').lean()
+    console.log('Total students in DB:', allStudents.length, allStudents.map(s => ({ username: s.username, teacherId: s.teacherId.toString() })))
+    
     res.json(students.map(s => ({ username: s.username })))
   } catch (err) {
     console.error('Get students error:', err)
