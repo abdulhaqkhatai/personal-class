@@ -100,7 +100,11 @@ router.post('/signup', async (req, res) => {
         classSlug,
         teacherId: teacher._id,
       })))
-      await User.insertMany(studentDocs)
+      const insertResult = await User.insertMany(studentDocs)
+      console.log(`Created ${insertResult.length} students for teacher ${teacher._id}`)
+      insertResult.forEach(doc => {
+        console.log(`Student: ${doc.username}, teacherId: ${doc.teacherId}`)
+      })
     }
 
     const token = jwt.sign(
@@ -234,12 +238,34 @@ router.get('/students', async (req, res) => {
     
     // Also log all students records for debugging
     const allStudents = await User.find({ role: 'student' }).select('username teacherId').lean()
-    console.log('Total students in DB:', allStudents.length, allStudents.map(s => ({ username: s.username, teacherId: s.teacherId.toString() })))
+    console.log('Total students in DB:', allStudents.length, allStudents.map(s => ({ username: s.username, teacherId: s.teacherId?.toString() })))
     
     res.json(students.map(s => ({ username: s.username })))
   } catch (err) {
     console.error('Get students error:', err)
     res.status(500).json({ error: 'Server error: ' + (err.message || 'Unknown error') })
+  }
+})
+
+// DEBUG: Get current user info
+router.get('/me', async (req, res) => {
+  try {
+    const auth = req.headers.authorization
+    if (!auth) return res.status(401).json({ error: 'No token' })
+    
+    const payload = jwt.verify(auth.split(' ')[1], JWT_SECRET)
+    console.log('Me endpoint - payload:', payload)
+    
+    const teacher = await User.findById(payload.id).lean()
+    console.log('Teacher found:', teacher ? 'Yes' : 'No', teacher?._id, teacher?.username)
+    
+    const students = await User.find({ teacherId: payload.id }).lean()
+    console.log('Students for this teacher:', students.length, students.map(s => s.username))
+    
+    res.json({ teacher, studentsCount: students.length, students: students.map(s => ({ username: s.username, _id: s._id })) })
+  } catch (err) {
+    console.error('Me endpoint error:', err)
+    res.status(500).json({ error: err.message })
   }
 })
 
