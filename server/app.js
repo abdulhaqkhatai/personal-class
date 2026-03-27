@@ -92,7 +92,7 @@ async function start() {
   
   // Debug endpoints
   app.get('/', (req, res) => res.send({ ok: true }))
-  app.get('/api/test-endpoint', (req, res) => res.json({ test: 'working' }))
+  app.get('/api/test-endpoint', (req, res) => res.json({ test: 'working', timestamp: new Date().toISOString() }))
 
   return app
 }
