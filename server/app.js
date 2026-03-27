@@ -87,10 +87,12 @@ async function start() {
   app.locals.db = mongoose.connection.db
 
   // Register routes after DB is ready
-  app.use(cors({ origin: CLIENT_URL }))
   app.use('/api/auth', authRoutes)
   app.use('/api/tests', testsRoutes)
+  
+  // Debug endpoints
   app.get('/', (req, res) => res.send({ ok: true }))
+  app.get('/api/test-endpoint', (req, res) => res.json({ test: 'working' }))
 
   return app
 }

@@ -206,49 +206,21 @@ router.post('/add-student', async (req, res) => {
   }
 })
 
-// GET students for teacher
 router.get('/students', async (req, res) => {
   try {
-    console.log('📍 /students endpoint called')
+    console.log('✅ GET /students called')
+    const auth = req.headers.authorization || ''
+    const token = auth.replace('Bearer ', '')
+    if (!token) return res.json([])
     
-    const auth = req.headers.authorization
-    if (!auth) {
-      console.log('❌ No auth header')
-      return res.json([])
-    }
+    const payload = jwt.verify(token, JWT_SECRET)
+    if (payload.role !== 'teacher') return res.json([])
     
-    const token = auth.split(' ')[1]
-    if (!token) {
-      console.log('❌ No token in auth header')
-      return res.json([])
-    }
-    
-    let payload
-    try {
-      payload = jwt.verify(token, JWT_SECRET)
-      console.log('✅ Token verified for:', payload.id)
-    } catch (err) {
-      console.log('❌ Invalid token:', err.message)
-      return res.json([])
-    }
-    
-    if (payload.role !== 'teacher') {
-      console.log('❌ Not a teacher, role:', payload.role)
-      return res.json([])
-    }
-
-    const teacherId = new mongoose.Types.ObjectId(payload.id)
-    const students = await User.find({ teacherId, role: 'student' }).lean()
-    
-    console.log(`✅ Found ${students.length} students`)
-    
-    const result = students.map(s => ({ username: s.username }))
-    console.log('Returning:', result)
-    
-    return res.json(result)
+    const students = await User.find({ teacherId: payload.id, role: 'student' }).select('username').lean()
+    res.json(students.map(s => ({ username: s.username })))
   } catch (err) {
-    console.error('❌ ERROR in /students:', err)
-    return res.json([])
+    console.error('❌ /students error:', err.message)
+    res.json([])
   }
 })
 
