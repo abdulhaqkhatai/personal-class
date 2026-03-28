@@ -87,12 +87,19 @@ async function start() {
   app.locals.db = mongoose.connection.db
 
   // Register routes after DB is ready
+  console.log('🔧 Mounting /api/auth routes with', Object.keys(authRoutes).length, 'route handlers')
   app.use('/api/auth', authRoutes)
   app.use('/api/tests', testsRoutes)
   
   // Debug endpoints
   app.get('/', (req, res) => res.send({ ok: true }))
-  app.get('/api/test-endpoint', (req, res) => res.json({ test: 'working', timestamp: new Date().toISOString() }))
+  app.get('/api/test-endpoint', (req, res) => res.json({ test: 'working', timestamp: new Date().toISOString(), version: '2' }))
+  
+  // Catch-all error handler
+  app.use((err, req, res, next) => {
+    console.error('❌ ERROR:', err)
+    res.status(500).json({ error: err.message || 'Server error' })
+  })
 
   return app
 }

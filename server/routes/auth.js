@@ -7,6 +7,8 @@ const User = require('../models/User')
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me'
 
+console.log('🔧 Loading auth routes... students endpoint will be available at GET /api/auth/students')
+
 // Helper: generate a safe classSlug from a class name
 function toSlug(name) {
   return name
@@ -206,21 +208,40 @@ router.post('/add-student', async (req, res) => {
   }
 })
 
+// GET /api/auth/students
 router.get('/students', async (req, res) => {
+  console.log('✅ [STUDENTS] Endpoint hit!')
   try {
-    console.log('✅ GET /students called')
-    const auth = req.headers.authorization || ''
-    const token = auth.replace('Bearer ', '')
-    if (!token) return res.json([])
+    const authHeader = req.headers.authorization
+    console.log('✅ [STUDENTS] Auth header:', authHeader ? 'present' : 'missing')
+    
+    if (!authHeader) {
+      console.log('✅ [STUDENTS] No auth, returning empty')
+      return res.status(200).json([])
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    console.log('✅ [STUDENTS] Token extracted, verifying...')
     
     const payload = jwt.verify(token, JWT_SECRET)
-    if (payload.role !== 'teacher') return res.json([])
+    console.log('✅ [STUDENTS] Token verified, role:', payload.role)
     
+    if (payload.role !== 'teacher') {
+      console.log('✅ [STUDENTS] Not teacher, returning empty')
+      return res.status(200).json([])
+    }
+    
+    console.log('✅ [STUDENTS] Finding students for teacherId:', payload.id)
     const students = await User.find({ teacherId: payload.id, role: 'student' }).select('username').lean()
-    res.json(students.map(s => ({ username: s.username })))
+    console.log('✅ [STUDENTS] Found students:', students.length)
+    
+    const result = students.map(s => ({ username: s.username }))
+    console.log('✅ [STUDENTS] Returning:', JSON.stringify(result))
+    
+    res.status(200).json(result)
   } catch (err) {
-    console.error('❌ /students error:', err.message)
-    res.json([])
+    console.error('❌ [STUDENTS] Error:', err.message)
+    res.status(200).json([])
   }
 })
 
