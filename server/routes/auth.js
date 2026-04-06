@@ -110,7 +110,7 @@ router.post('/signup', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: teacher._id, role: 'teacher', classSlug, className: trimmedClassName, subjects },
+      { id: teacher._id, username: teacher.username, role: 'teacher', classSlug, className: trimmedClassName, subjects },
       JWT_SECRET,
       { expiresIn: '30d' }
     )
@@ -149,7 +149,7 @@ router.post('/login', async (req, res) => {
     const subjects = user.subjects || []
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, classSlug, className, subjects },
+      { id: user._id, username: user.username, role: user.role, classSlug, className, subjects },
       JWT_SECRET,
       { expiresIn: '30d' }
     )
