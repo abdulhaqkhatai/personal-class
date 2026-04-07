@@ -34,9 +34,15 @@ router.get('/', verifyToken, async (req, res) => {
     // If student is querying, only show their marks
     if (req.user.role === 'student') {
       filterQuery.studentUsername = req.user.username
+      console.log(`📋 Student ${req.user.username} querying marks from class ${req.user.classSlug}`)
+    } else {
+      console.log(`📋 Teacher ${req.user.username} querying all tests from class ${req.user.classSlug}`)
     }
     
     const tests = await col.find(filterQuery).sort({ date: -1 }).toArray()
+    if (req.user.role === 'student') {
+      console.log(`📋 Returned ${tests.length} test(s) for student ${req.user.username}`)
+    }
     res.json(tests)
   } catch (err) {
     console.error(err)
@@ -56,12 +62,13 @@ router.post('/', verifyToken, async (req, res) => {
       date: new Date(date),
       marks,
       week: week || null,
-      studentUsername: studentUsername || null,
+      studentUsername: studentUsername,
       createdBy: req.user.id,
       classSlug: req.user.classSlug,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
+    console.log(`📝 Creating test for student ${studentUsername} in class ${req.user.classSlug}`)
     const result = await col.insertOne(doc)
     res.json({ ...doc, _id: result.insertedId, id: result.insertedId })
   } catch (err) {
