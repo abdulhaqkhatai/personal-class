@@ -31,7 +31,7 @@ export default function StudentView({ darkMode, setDarkMode }) {
         setTests([])
       }
     } catch (err) {
-      console.error('❌ Failed to fetch marks:', err.message)
+      console.error('❌ Failed to fetch marks:', err.message, err)
       setTests([])
     } finally {
       setLoading(false)

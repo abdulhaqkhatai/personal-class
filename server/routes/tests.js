@@ -43,10 +43,17 @@ router.get('/', verifyToken, async (req, res) => {
     if (req.user.role === 'student') {
       console.log(`📋 Returned ${tests.length} test(s) for student ${req.user.username}`)
     }
+    
+    // Add debug info to response headers for troubleshooting
+    res.set('X-Debug-Count', tests.length.toString())
+    res.set('X-Debug-User', req.user.username)
+    res.set('X-Debug-Role', req.user.role)
+    res.set('X-Debug-Class', req.user.classSlug)
+    
     res.json(tests)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ error: 'server error' })
+    res.status(500).json({ error: 'server error', message: err.message })
   }
 })
 
