@@ -10,24 +10,52 @@ export default function StudentView({ darkMode, setDarkMode }) {
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showConsistencyInfo, setShowConsistencyInfo] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
+  // Fetch marks from API
+  const refreshMarks = async () => {
+    try {
+      console.log('📡 Fetching marks from API...')
+      setRefreshing(true)
+      setLoading(true)
+      
+      const data = await apiFetch('/api/tests')
+      console.log('✅ API Response:', data)
+      
+      if (Array.isArray(data)) {
+        const transformed = data.map(t => ({ ...t, id: t._id }))
+        console.log('✅ Transformed to', transformed.length, 'test(s)')
+        setTests(transformed)
+      } else {
+        console.error('❌ Invalid response (not an array):', data)
+        setTests([])
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch marks:', err.message)
+      setTests([])
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  // Load marks on component mount
   useEffect(() => {
-    let mounted = true
-    // Delay loading slightly to not compete with login
-    const timer = setTimeout(() => {
-      apiFetch('/api/tests').then(data => {
-        if (!mounted) return
-        if (Array.isArray(data)) setTests(data.map(t => ({ ...t, id: t._id })))
-        setLoading(false)
-      }).catch(err => {
-        console.error(err)
-        setLoading(false)
-      })
-    }, 100) // Reduced from 500ms
+    console.log('🚀 StudentView mounted - loading marks')
+    refreshMarks()
+  }, [])
+
+  // Auto-refresh marks every 10 seconds
+  useEffect(() => {
+    console.log('⏰ Setting up auto-refresh interval (10 seconds)')
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refresh triggered')
+      refreshMarks()
+    }, 10000)
 
     return () => {
-      mounted = false
-      clearTimeout(timer)
+      console.log('⏰ Cleaning up auto-refresh interval')
+      clearInterval(interval)
     }
   }, [])
 
@@ -45,7 +73,11 @@ export default function StudentView({ darkMode, setDarkMode }) {
 
   // prepare month-grouped entries once - optimize with better memoization
   const entries = React.useMemo(() => {
-    if (!tests.length) return []
+    console.log('🔄 Recalculating entries from', tests.length, 'tests')
+    if (!tests.length) {
+      console.log('   → No tests, entries = []')
+      return []
+    }
     const arr = []
     tests.forEach(t => {
       const id = t.id || t._id
@@ -58,19 +90,29 @@ export default function StudentView({ darkMode, setDarkMode }) {
         arr.push({ id, date, monthKey, subject: sub, obtained, total })
       })
     })
+    console.log('   → Created', arr.length, 'entries:', arr)
     return arr
   }, [tests])
 
   const grouped = React.useMemo(() => {
-    if (!entries.length) return {}
-    return entries.reduce((acc, e) => {
+    if (!entries.length) {
+      console.log('📊 grouped: no entries, returning {}')
+      return {}
+    }
+    const result = entries.reduce((acc, e) => {
       acc[e.monthKey] = acc[e.monthKey] || []
       acc[e.monthKey].push(e)
       return acc
     }, {})
+    console.log('📊 grouped:', result)
+    return result
   }, [entries])
 
-  const months = React.useMemo(() => Object.keys(grouped).sort((a, b) => b.localeCompare(a)), [grouped])
+  const months = React.useMemo(() => {
+    const monthList = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+    console.log('📊 months:', monthList)
+    return monthList
+  }, [grouped])
 
   useEffect(() => {
     if (months.length && !selectedMonth) setSelectedMonth(months[0])
@@ -159,6 +201,14 @@ export default function StudentView({ darkMode, setDarkMode }) {
         <h1>Student Dashboard</h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
+          <button 
+            onClick={() => refreshMarks()} 
+            disabled={refreshing}
+            title="Refresh marks"
+            style={{ padding: '6px 12px', opacity: refreshing ? 0.6 : 1 }}
+          >
+            🔄 {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
           <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
             {darkMode ? '☀️' : '🌙'}
           </button>

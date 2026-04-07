@@ -56,6 +56,7 @@ router.post('/', verifyToken, async (req, res) => {
     if (req.user.role !== 'teacher') return res.status(403).json({ error: 'forbidden' })
     const { date, marks, week, studentUsername } = req.body
     if (!date || !marks) return res.status(400).json({ error: 'date and marks required' })
+    if (!studentUsername) return res.status(400).json({ error: 'studentUsername is required' })
     
     const col = getTestsCollection(req)
     const doc = {
@@ -68,7 +69,7 @@ router.post('/', verifyToken, async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    console.log(`📝 Creating test for student ${studentUsername} in class ${req.user.classSlug}`)
+    console.log(`📝 Creating test for student "${studentUsername}" in class "${req.user.classSlug}"`)
     const result = await col.insertOne(doc)
     res.json({ ...doc, _id: result.insertedId, id: result.insertedId })
   } catch (err) {
