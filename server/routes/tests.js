@@ -42,6 +42,8 @@ router.get('/', verifyToken, async (req, res) => {
     const tests = await col.find(filterQuery).sort({ date: -1 }).toArray()
     if (req.user.role === 'student') {
       console.log(`📋 Returned ${tests.length} test(s) for student ${req.user.username}`)
+      // Add debug header to help diagnose
+      res.set('X-Debug-Filter', JSON.stringify(filterQuery))
     }
     
     // Add debug info to response headers for troubleshooting
@@ -115,6 +117,103 @@ router.delete('/:id', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'server error' })
+  }
+})
+
+// DEBUG: Get diagnostic info about what's in the database
+router.get('/debug/student-marks', verifyToken, async (req, res) => {
+  try {
+    const col = getTestsCollection(req)
+    
+    // Get ALL documents in this class
+    const allDocs = await col.find({}).toArray()
+    
+    // Get marks for this student
+    const studentMarks = await col.find({ studentUsername: req.user.username }).toArray()
+    
+    // Get unique studentUsernames in this class
+    const uniqueStudents = await col.distinct('studentUsername')
+    
+    res.json({
+      currentStudent: {
+        username: req.user.username,
+        classSlug: req.user.classSlug
+      },
+      totalDocsInClass: allDocs.length,
+      marksForThisStudent: studentMarks.length,
+      allStudentNamesInDatabase: uniqueStudents,
+      sampleDocuments: allDocs.slice(0, 2).map(d => ({
+        _id: d._id,
+        studentUsername: d.studentUsername,
+        marks: d.marks,
+        date: d.date
+      }))
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ADMIN: Fix marks that are missing studentUsername (for old imported data)
+router.post('/admin/fix-missing-usernames', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ error: 'Only teachers can fix marks' })
+    }
+
+    const col = getTestsCollection(req)
+    
+    // Find all documents where studentUsername is missing or null
+    const docsToFix = await col.find({ 
+      $or: [
+        { studentUsername: null },
+        { studentUsername: { $exists: false } }
+      ]
+    }).toArray()
+
+    console.log(`🔧 Found ${docsToFix.length} documents with missing studentUsername`)
+
+    // Get all students in this class
+    const User = require('../models/User')
+    const students = await User.find({ 
+      role: 'student', 
+      classSlug: req.user.classSlug 
+    }).exec()
+
+    const studentUsernames = students.map(s => s.username)
+
+    // If only one student, assign all missing marks to that student
+    if (studentUsernames.length === 1) {
+      const singleStudent = studentUsernames[0]
+      const result = await col.updateMany(
+        { $or: [{ studentUsername: null }, { studentUsername: { $exists: false } }] },
+        { $set: { studentUsername: singleStudent } }
+      )
+      
+      return res.json({
+        message: `Updated ${result.modifiedCount} documents`,
+        assignedTo: singleStudent,
+        details: `All marks without studentUsername were assigned to ${singleStudent}`
+      })
+    }
+
+    // If multiple students, return the docs for manual assignment
+    res.json({
+      message: 'Multiple students found - marks cannot be auto-fixed',
+      studentCount: studentUsernames.length,
+      studentUsernames,
+      docsNeedingFix: docsToFix.length,
+      docsToFix: docsToFix.map(d => ({
+        _id: d._id,
+        marks: d.marks,
+        date: d.date
+      })),
+      nextStep: 'Contact admin to manually assign marks to correct students'
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err.message })
   }
 })
 

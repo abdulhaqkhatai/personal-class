@@ -53,3 +53,24 @@ export function getToken() {
 export function ensureSeedData() {
   // noop — backend manages data
 }
+
+export function validateTokenHasUsername() {
+  const token = localStorage.getItem(TOKEN_KEY)
+  if (!token) return false
+  
+  try {
+    // JWT format: header.payload.signature
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+    
+    // Decode payload (base64url)
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    console.log('🔐 Token payload:', payload)
+    
+    // Check if username field exists
+    return !!payload.username
+  } catch (err) {
+    console.error('❌ Failed to decode token:', err.message)
+    return false
+  }
+}

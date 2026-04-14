@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Marks API Call</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .section { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2196F3; }
+        .error { border-left-color: #f44336; }
+        .success { border-left-color: #4CAF50; }
+        .warning { border-left-color: #ff9800; }
+        .log { background: #f9f9f9; padding: 10px; margin: 5px 0; border-radius: 3px; font-size: 12px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 3px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        h2 { margin-top: 0; }
+        .highlight { background: yellow; }
+    </style>
+</head>
+<body>
+
+<h1>🧪 Debug Student Marks API Call</h1>
+
+<div class="section">
+    <h2>📋 Step 1: Check Local Storage</h2>
+    <button onclick="checkLocalStorage()">Check Token & User</button>
+    <div id="storage-output" class="log"></div>
+</div>
+
+<div class="section">
+    <h2>🔑 Step 2: Decode JWT Token</h2>
+    <button onclick="decodeToken()">Decode Token</button>
+    <div id="token-output" class="log"></div>
+</div>
+
+<div class="section">
+    <h2>📡 Step 3: Call /api/tests Endpoint</h2>
+    <p>API Base URL: <input type="text" id="api-url" value="http://localhost:5000" /></p>
+    <button onclick="callAPI()">Call API</button>
+    <div id="api-output" class="log"></div>
+</div>
+
+<div class="section">
+    <h2>🔍 Step 4: Response Analysis</h2>
+    <div id="analysis" class="log"></div>
+</div>
+
+<script>
+function log(elementId, message, isError = false) {
+    const elem = document.getElementById(elementId);
+    const line = document.createElement('div');
+    line.textContent = message;
+    if (isError) line.style.color = 'red';
+    elem.appendChild(line);
+}
+
+function clearLog(elementId) {
+    document.getElementById(elementId).innerHTML = '';
+}
+
+function checkLocalStorage() {
+    clearLog('storage-output');
+    
+    const token = localStorage.getItem('ma_token');
+    const user = localStorage.getItem('ma_current');
+    
+    log('storage-output', '🔑 Token from localStorage:');
+    if (token) {
+        log('storage-output', '✅ Token exists');
+        log('storage-output', 'First 50 chars: ' + token.substring(0, 50) + '...');
+        log('storage-output', 'Total length: ' + token.length);
+    } else {
+        log('storage-output', '❌ NO TOKEN FOUND!', true);
+        log('storage-output', 'This is why marks aren\'t showing - no token in localStorage');
+        return;
+    }
+    
+    log('storage-output', '');
+    log('storage-output', '👤 User from localStorage:');
+    if (user) {
+        log('storage-output', '✅ User data exists');
+        try {
+            const userData = JSON.parse(user);
+            log('storage-output', 'Username: ' + userData.username);
+            log('storage-output', 'Role: ' + userData.role);
+            log('storage-output', 'Class: ' + userData.classSlug);
+        } catch (e) {
+            log('storage-output', 'Error parsing user: ' + e.message, true);
+        }
+    } else {
+        log('storage-output', '❌ NO USER DATA FOUND!', true);
+    }
+}
+
+function decodeToken() {
+    clearLog('token-output');
+    
+    const token = localStorage.getItem('ma_token');
+    if (!token) {
+        log('token-output', '❌ No token to decode', true);
+        return;
+    }
+    
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            log('token-output', '❌ Invalid JWT format', true);
+            return;
+        }
+        
+        const payload = JSON.parse(atob(parts[1]));
+        log('token-output', '✅ JWT Decoded Successfully:');
+        log('token-output', '');
+        Object.entries(payload).forEach(([key, value]) => {
+            if (key !== 'iat' && key !== 'exp') {
+                log('token-output', `${key}: ${JSON.stringify(value)}`);
+            }
+        });
+        
+        log('token-output', '');
+        if (!payload.username) {
+            log('token-output', '⚠️ WARNING: No username field in token!', true);
+        } else {
+            log('token-output', '✅ Username field present: ' + payload.username);
+        }
+        
+        if (payload.classSlug) {
+            log('token-output', '✅ Class slug field present: ' + payload.classSlug);
+        }
+        
+    } catch (e) {
+        log('token-output', '❌ Error decoding token: ' + e.message, true);
+    }
+}
+
+async function callAPI() {
+    clearLog('api-output');
+    clearLog('analysis');
+    
+    const token = localStorage.getItem('ma_token');
+    const apiUrl = document.getElementById('api-url').value;
+    
+    if (!token) {
+        log('api-output', '❌ No token found - cannot call API', true);
+        return;
+    }
+    
+    log('api-output', '📡 Calling: GET ' + apiUrl + '/api/tests');
+    log('api-output', 'Authorization: Bearer ' + token.substring(0, 30) + '...');
+    log('api-output', '');
+    
+    try {
+        const response = await fetch(apiUrl + '/api/tests', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        log('api-output', '✅ Response received');
+        log('api-output', 'Status: ' + response.status + ' ' + response.statusText);
+        log('api-output', '');
+        
+        const data = await response.json();
+        
+        log('api-output', '📊 Response data:');
+        if (Array.isArray(data)) {
+            log('api-output', '✅ Data is an array with ' + data.length + ' items');
+            
+            if (data.length === 0) {
+                log('api-output', '⚠️ Array is EMPTY!', true);
+                log('analysis', '🔴 PROBLEM: Student has NO marks in the database');
+                log('analysis', 'Solution: Teacher needs to add marks for this student');
+            } else {
+                log('api-output', '✅ Marks found:');
+                data.slice(0, 3).forEach((mark, i) => {
+                    log('api-output', `  [${i+1}] Date: ${mark.date}, Marks: ${JSON.stringify(mark.marks || {})}`);
+                });
+                if (data.length > 3) {
+                    log('api-output', `  ... and ${data.length - 3} more marks`);
+                }
+                
+                log('analysis', '✅ SUCCESS: Student HAS marks in database');
+                log('analysis', 'The marks should display on the frontend');
+                log('analysis', 'If they\'re not displaying, check the React component');
+            }
+        } else if (data && typeof data === 'object' && data.error) {
+            log('api-output', '❌ API returned error: ' + data.error, true);
+            log('analysis', '🔴 PROBLEM: API returned error');
+            log('analysis', 'Error: ' + data.error);
+            
+            if (data.error.includes('Unauthorized') || response.status === 401) {
+                log('analysis', 'Cause: Invalid or expired token');
+                log('analysis', 'Solution: Logout and login fresh');
+            }
+        } else {
+            log('api-output', 'Unexpected response: ' + JSON.stringify(data).substring(0, 100), true);
+            log('analysis', '🔴 PROBLEM: Unexpected API response format');
+        }
+        
+    } catch (err) {
+        log('api-output', '❌ Network error: ' + err.message, true);
+        log('analysis', '🔴 PROBLEM: Cannot reach API');
+        log('analysis', 'Check that:');
+        log('analysis', '1. Backend server is running (`npm start` in /server)');
+        log('analysis', '2. API URL is correct: ' + document.getElementById('api-url').value);
+        log('analysis', '3. CORS is enabled on backend');
+    }
+}
+
+// Run checks on page load
+window.addEventListener('load', () => {
+    log('storage-output', 'Click "Check Token & User" button to start debugging...');
+});
+</script>
+
+</body>
+</html>

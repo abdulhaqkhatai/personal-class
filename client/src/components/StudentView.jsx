@@ -22,7 +22,18 @@ export default function StudentView({ darkMode, setDarkMode }) {
       const data = await apiFetch('/api/tests')
       console.log('✅ API Response:', data)
       
-      if (Array.isArray(data)) {
+      // Check if API returned an error (e.g., unauthorized)
+      if (data && typeof data === 'object' && (data.error || data.message)) {
+        console.error('❌ API Error:', data.error || data.message)
+        // If unauthorized, logout and redirect
+        if (data.error?.includes('Unauthorized') || data.error?.includes('unauthorized') || data.message?.includes('Unauthorized')) {
+          console.error('❌ Session expired or token invalid. Redirecting to login...')
+          logout()
+          navigate('/login')
+          return
+        }
+        setTests([])
+      } else if (Array.isArray(data)) {
         const transformed = data.map(t => ({ ...t, id: t._id }))
         console.log('✅ Transformed to', transformed.length, 'test(s)')
         setTests(transformed)
@@ -41,7 +52,16 @@ export default function StudentView({ darkMode, setDarkMode }) {
 
   // Load marks on component mount
   useEffect(() => {
-    console.log('🚀 StudentView mounted - loading marks')
+    const user = getCurrentUser()
+    console.log('🚀 StudentView mounted - current user:', user)
+    
+    // Check if user is logged in
+    if (!user || !user.id) {
+      console.warn('⚠️ No user logged in, redirecting to login')
+      navigate('/login')
+      return
+    }
+    
     refreshMarks()
   }, [])
 
