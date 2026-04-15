@@ -245,6 +245,101 @@ router.get('/students', async (req, res) => {
   }
 })
 
+// Get teacher profile info
+router.get('/teacher-profile', async (req, res) => {
+  try {
+    const auth = req.headers.authorization
+    if (!auth) return res.status(401).json({ error: 'No token' })
+    
+    const token = auth.split(' ')[1]
+    const payload = jwt.verify(token, JWT_SECRET)
+    
+    if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can access this' })
+    
+    const teacher = await User.findById(payload.id)
+    if (!teacher) return res.status(404).json({ error: 'Teacher not found' })
+    
+    const students = await User.find({ teacherId: teacher._id }).select('username _id').lean()
+    
+    res.json({
+      className: teacher.className,
+      classSlug: teacher.classSlug,
+      subjects: teacher.subjects || [],
+      students: students.map(s => ({ username: s.username, id: s._id }))
+    })
+  } catch (err) {
+    console.error('Teacher profile error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Update teacher profile (class name, subjects)
+router.put('/teacher-profile', async (req, res) => {
+  try {
+    const auth = req.headers.authorization
+    if (!auth) return res.status(401).json({ error: 'No token' })
+    
+    const token = auth.split(' ')[1]
+    const payload = jwt.verify(token, JWT_SECRET)
+    
+    if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can access this' })
+    
+    const { className, subjects } = req.body
+    
+    const teacher = await User.findById(payload.id)
+    if (!teacher) return res.status(404).json({ error: 'Teacher not found' })
+    
+    // Update teacher info
+    if (className !== undefined) teacher.className = className.trim()
+    if (subjects !== undefined && Array.isArray(subjects)) teacher.subjects = subjects
+    
+    await teacher.save()
+    
+    res.json({ 
+      className: teacher.className,
+      classSlug: teacher.classSlug,
+      subjects: teacher.subjects
+    })
+  } catch (err) {
+    console.error('Update teacher profile error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Remove student
+router.delete('/remove-student/:studentId', async (req, res) => {
+  try {
+    const auth = req.headers.authorization
+    if (!auth) return res.status(401).json({ error: 'No token' })
+    
+    const token = auth.split(' ')[1]
+    const payload = jwt.verify(token, JWT_SECRET)
+    
+    if (payload.role !== 'teacher') return res.status(403).json({ error: 'Only teachers can remove students' })
+    
+    const studentId = req.params.studentId
+    
+    // Find student and verify they belong to this teacher
+    const student = await User.findById(studentId)
+    if (!student) return res.status(404).json({ error: 'Student not found' })
+    
+    if (student.teacherId.toString() !== payload.id) {
+      return res.status(403).json({ error: 'Student does not belong to this teacher' })
+    }
+    
+    // Delete student and their marks
+    await User.deleteOne({ _id: studentId })
+    
+    // Optionally delete their marks from tests collection
+    // This depends on your database schema for marks
+    
+    res.json({ message: 'Student removed successfully' })
+  } catch (err) {
+    console.error('Remove student error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // DEBUG: Get current user info with students
 router.get('/debug-me', async (req, res) => {
   try {

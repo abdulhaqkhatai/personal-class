@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
+import TeacherSettings from './TeacherSettings'
 
 export default function TeacherView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ export default function TeacherView({ darkMode, setDarkMode }) {
   const [loading, setLoading] = useState(true)
   const [showConsistencyInfo, setShowConsistencyInfo] = useState(false)
   const [studentError, setStudentError] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     // Load students list
@@ -290,6 +292,14 @@ export default function TeacherView({ darkMode, setDarkMode }) {
         <h1>Teacher Dashboard</h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="btn"
+            style={{ minWidth: '100px' }}
+            title="Teacher Settings"
+          >
+            ⚙️ Settings
+          </button>
           <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
             {darkMode ? '☀️' : '🌙'}
           </button>
@@ -764,6 +774,23 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           </div>
         )}
       </section>
+
+      {showSettings && (
+        <TeacherSettings
+          onClose={() => setShowSettings(false)}
+          onUpdated={() => {
+            setShowSettings(false)
+            // Reload students list
+            apiFetch('/api/auth/students')
+              .then(data => {
+                if (Array.isArray(data)) {
+                  setStudents(data)
+                }
+              })
+              .catch(err => console.error('Failed to reload students:', err))
+          }}
+        />
+      )}
     </div>
   )
 }
