@@ -4,6 +4,7 @@ import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
 import TeacherSettings from './TeacherSettings'
+import ProfileDropdown from './ProfileDropdown'
 
 export default function TeacherView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
@@ -290,22 +291,11 @@ export default function TeacherView({ darkMode, setDarkMode }) {
     <div className="page">
       <header className="header">
         <h1>Teacher Dashboard</h1>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="btn"
-            style={{ minWidth: '100px' }}
-            title="Teacher Settings"
-          >
-            ⚙️ Settings
-          </button>
-          <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-          <button onClick={doLogout} className="btn">Logout</button>
-        </div>
-      </header>
+        <ProfileDropdown 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode}
+          onSettingsClick={() => setShowSettings(true)}
+        />
 
       <section className="card">
         <h2><span style={{ color: 'var(--accent)' }}>+</span> Add Marks</h2>

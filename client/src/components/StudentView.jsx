@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { weeklyAndMonthlyStats, calculateConsistency } from '../utils/stats'
 import { logout, getCurrentUser } from '../utils/auth'
 import { apiFetch } from '../utils/api'
+import ProfileDropdown from './ProfileDropdown'
 
 export default function StudentView({ darkMode, setDarkMode }) {
   const navigate = useNavigate()
@@ -219,22 +220,10 @@ export default function StudentView({ darkMode, setDarkMode }) {
     <div className="page">
       <header className="header">
         <h1>Student Dashboard</h1>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontWeight: 500, color: 'var(--muted)' }}>{getCurrentUser()?.username}</span>
-          <button 
-            onClick={() => refreshMarks()} 
-            disabled={refreshing}
-            title="Refresh marks"
-            style={{ padding: '6px 12px', opacity: refreshing ? 0.6 : 1 }}
-          >
-            🔄 {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle" title={darkMode ? 'Light Mode' : 'Dark Mode'} style={{ position: 'static' }}>
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-          <button onClick={doLogout} className="btn">Logout</button>
-        </div>
-      </header>
+        <ProfileDropdown 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode}
+        />
 
       <section className="card">
         <h2>Your Marks History</h2>
