@@ -296,6 +296,7 @@ export default function TeacherView({ darkMode, setDarkMode }) {
           setDarkMode={setDarkMode}
           onSettingsClick={() => setShowSettings(true)}
         />
+      </header>
 
       <section className="card">
         <h2><span style={{ color: 'var(--accent)' }}>+</span> Add Marks</h2>

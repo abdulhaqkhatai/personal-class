@@ -224,6 +224,7 @@ export default function StudentView({ darkMode, setDarkMode }) {
           darkMode={darkMode} 
           setDarkMode={setDarkMode}
         />
+      </header>
 
       <section className="card">
         <h2>Your Marks History</h2>
